@@ -1,0 +1,411 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Some typical usage scenarios &mdash; peewee 0.7.4 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/flasky.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="peewee 0.7.4 documentation" href="../index.html" />
+    <link rel="next" title="Example app" href="example.html" />
+    <link rel="prev" title="Installing peewee" href="installation.html" />
+   
+  
+  <link media="only screen and (max-device-width: 480px)" href="../_static/small_flask.css" type= "text/css" rel="stylesheet" />
+
+  </head>
+  <body>
+  
+  
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="example.html" title="Example app"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installing peewee"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">peewee 0.7.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="some-typical-usage-scenarios">
+<h1>Some typical usage scenarios<a class="headerlink" href="#some-typical-usage-scenarios" title="Permalink to this headline">¶</a></h1>
+<p>Below are outlined some of the ways to perform typical database-related tasks
+with peewee.</p>
+<p>Examples will use the following models:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">peewee</span>
+
+<span class="k">class</span> <span class="nc">Blog</span><span class="p">(</span><span class="n">peewee</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">creator</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">Entry</span><span class="p">(</span><span class="n">peewee</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">blog</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">ForeignKeyField</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">TextField</span><span class="p">()</span>
+    <span class="n">pub_date</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">()</span>
+    <span class="n">published</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="creating-a-database-connection-and-tables">
+<h2>Creating a database connection and tables<a class="headerlink" href="#creating-a-database-connection-and-tables" title="Permalink to this headline">¶</a></h2>
+<p>It is necessary to explicitly connect to the database before using it.  By
+default, peewee provides a default database in the module-scope:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">peewee</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Entry</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>It is possible to use multiple databases (provided that you don&#8217;t try and mix
+models from each):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">custom_db</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">SqliteDatabase</span><span class="p">(</span><span class="s">&#39;custom.db&#39;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">CustomModel</span><span class="p">(</span><span class="n">peewee</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">whatev</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">database</span> <span class="o">=</span> <span class="n">custom_db</span>
+<span class="gp">...</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">custom_db</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">CustomModel</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Standard practice is to define a base model class that points at your custom
+database, and then all your models will extend it:</p>
+<div class="highlight-python"><pre>custom_db = peewee.SqliteDatabase('custom.db')
+
+class CustomModel(peewee.Model):
+    class Meta:
+        database = custom_db
+
+class Blog(CustomModel):
+    author = peewee.CharField()
+    name = peewee.TextField()
+
+class Entry(CustomModel):
+    # etc, etc</pre>
+</div>
+</div>
+<div class="section" id="using-with-postgresql">
+<h2>Using with Postgresql<a class="headerlink" href="#using-with-postgresql" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">psql_db</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">PostgresqlDatabase</span><span class="p">(</span><span class="s">&#39;my_database&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;code&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">PostgresqlModel</span><span class="p">(</span><span class="n">peewee</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A base model that will use our MySQL database&quot;&quot;&quot;</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">psql_db</span>
+
+<span class="k">class</span> <span class="nc">Blog</span><span class="p">(</span><span class="n">PostgresqlModel</span><span class="p">):</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+    <span class="c"># etc, etc</span>
+
+
+<span class="c"># when you&#39;re ready to start querying, remember to connect</span>
+<span class="n">psql_db</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="using-with-mysql">
+<h2>Using with MySQL<a class="headerlink" href="#using-with-mysql" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mysql_db</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">MySQLDatabase</span><span class="p">(</span><span class="s">&#39;my_database&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;code&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MySQLModel</span><span class="p">(</span><span class="n">peewee</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A base model that will use our MySQL database&quot;&quot;&quot;</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">mysql_db</span>
+
+<span class="k">class</span> <span class="nc">Blog</span><span class="p">(</span><span class="n">MySQLModel</span><span class="p">):</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">peewee</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+    <span class="c"># etc, etc</span>
+
+
+<span class="c"># when you&#39;re ready to start querying, remember to connect</span>
+<span class="n">mysql_db</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="creating-a-new-record">
+<h2>Creating a new record<a class="headerlink" href="#creating-a-new-record" title="Permalink to this headline">¶</a></h2>
+<p>You can use the <cite>create</cite> method on the model:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">creator</span><span class="o">=</span><span class="s">&#39;Charlie&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;My Blog&#39;</span><span class="p">)</span>
+<span class="go">&lt;__main__.Blog object at 0x2529350&gt;</span>
+</pre></div>
+</div>
+<p>Alternatively, you can build up a model instance programmatically and then
+save it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span> <span class="o">=</span> <span class="n">Blog</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">creator</span> <span class="o">=</span> <span class="s">&#39;Chuck&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;Another blog&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">id</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>Once a model instance has a primary key, any attempt to re-save it will result
+in an update rather than another insert:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">id</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">id</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="getting-a-single-record">
+<h2>Getting a single record<a class="headerlink" href="#getting-a-single-record" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">&lt;__main__.Blog object at 0x25294d0&gt;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+<span class="go">u&#39;My Blog&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">creator</span><span class="o">=</span><span class="s">&#39;Chuck&#39;</span><span class="p">)</span>
+<span class="go">&lt;__main__.Blog object at 0x2529410&gt;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">creator</span><span class="o">=</span><span class="s">&#39;Chuck&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+<span class="go">u&#39;Another blog&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="selecting-some-records">
+<h2>Selecting some records<a class="headerlink" href="#selecting-some-records" title="Permalink to this headline">¶</a></h2>
+<p>To simply get all instances in a table, call the <cite>select</cite> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">blog</span> <span class="ow">in</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">blog</span><span class="o">.</span><span class="n">name</span>
+<span class="gp">...</span>
+<span class="go">My Blog</span>
+<span class="go">Another blog</span>
+</pre></div>
+</div>
+<p>To get all the related instances for an object, you can query the related name:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">blog</span><span class="o">.</span><span class="n">entry_set</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">entry</span><span class="o">.</span><span class="n">title</span>
+<span class="gp">...</span>
+<span class="go">entry 1</span>
+<span class="go">entry 2</span>
+<span class="go">entry 3</span>
+<span class="go">entry 4</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="filtering-records">
+<h2>Filtering records<a class="headerlink" href="#filtering-records" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">blog</span><span class="o">=</span><span class="n">blog</span><span class="p">,</span> <span class="n">published</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">blog</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">published</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">My Blog: Some Entry (True)</span>
+<span class="go">My Blog: Another Entry (True)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">pub_date__lt</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2011</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">entry</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">pub_date</span>
+<span class="gp">...</span>
+<span class="go">Old entry 2010-01-01 00:00:00</span>
+</pre></div>
+</div>
+<p>You can also filter across joins:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;My Blog&#39;</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">entry</span><span class="o">.</span><span class="n">title</span>
+<span class="go">Old entry</span>
+<span class="go">Some Entry</span>
+<span class="go">Another Entry</span>
+</pre></div>
+</div>
+<p>If you are already familiar with Django&#8217;s ORM, you can use the &#8220;double underscore&#8221;
+syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">Entry</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">blog__name</span><span class="o">=</span><span class="s">&#39;My Blog&#39;</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">entry</span><span class="o">.</span><span class="n">title</span>
+<span class="go">Old entry</span>
+<span class="go">Some Entry</span>
+<span class="go">Another Entry</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sorting-records">
+<h2>Sorting records<a class="headerlink" href="#sorting-records" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;pub_date&#39;</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">e</span><span class="o">.</span><span class="n">pub_date</span>
+<span class="gp">...</span>
+<span class="go">2010-01-01 00:00:00</span>
+<span class="go">2011-06-07 14:08:48</span>
+<span class="go">2011-06-07 14:12:57</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">peewee</span><span class="o">.</span><span class="n">desc</span><span class="p">(</span><span class="s">&#39;pub_date&#39;</span><span class="p">)):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">e</span><span class="o">.</span><span class="n">pub_date</span>
+<span class="gp">...</span>
+<span class="go">2011-06-07 14:12:57</span>
+<span class="go">2011-06-07 14:08:48</span>
+<span class="go">2010-01-01 00:00:00</span>
+</pre></div>
+</div>
+<p>You can also order across joins.  Assuming you want
+to order entries by the name of the blog, then by pubdate desc:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">qry</span> <span class="o">=</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="n">Blog</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;DESC&#39;</span><span class="p">),</span>
+<span class="gp">... </span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qry</span><span class="o">.</span><span class="n">sql</span><span class="p">()</span>
+<span class="go">(&#39;SELECT t1.* FROM entry AS t1 INNER JOIN blog AS t2 ON t1.blog_id = t2.id ORDER BY t2.name ASC, t1.pub_date DESC&#39;, [])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="paginating-records">
+<h2>Paginating records<a class="headerlink" href="#paginating-records" title="Permalink to this headline">¶</a></h2>
+<p>The paginate method makes it easy to grab a &#8220;page&#8221; or records &#8211; it takes two
+parameters, <cite>page_number</cite>, and <cite>items_per_page</cite>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">entry</span><span class="o">.</span><span class="n">title</span>
+<span class="gp">...</span>
+<span class="go">entry 10</span>
+<span class="go">entry 11</span>
+<span class="go">entry 12</span>
+<span class="go">entry 13</span>
+<span class="go">entry 14</span>
+<span class="go">entry 15</span>
+<span class="go">entry 16</span>
+<span class="go">entry 17</span>
+<span class="go">entry 18</span>
+<span class="go">entry 19</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="counting-records">
+<h2>Counting records<a class="headerlink" href="#counting-records" title="Permalink to this headline">¶</a></h2>
+<p>You can count the number of rows in any select query:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="go">100</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">id__gt</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="go">50</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="performing-atomic-updates">
+<h2>Performing atomic updates<a class="headerlink" href="#performing-atomic-updates" title="Permalink to this headline">¶</a></h2>
+<p>Use the special <tt class="xref py py-class docutils literal"><span class="pre">F</span></tt> object to perform an atomic update:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">MessageCount</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">count</span><span class="o">=</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;count&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">some_user</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="aggregating-records">
+<h2>Aggregating records<a class="headerlink" href="#aggregating-records" title="Permalink to this headline">¶</a></h2>
+<p>Suppose you have some blogs and want to get a list of them along with the count
+of entries in each.  First I will show you the shortcut:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is equivalent to the following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">({</span>
+    <span class="n">Blog</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+    <span class="n">Entry</span><span class="p">:</span> <span class="p">[</span><span class="n">Count</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)],</span>
+<span class="p">})</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The resulting query will return Blog objects with all their normal attributes
+plus an additional attribute &#8216;count&#8217; which will contain the number of entries.
+By default it uses an inner join if the foreign key is not nullable, which means
+blogs without entries won&#8217;t appear in the list.  To remedy this, manually specify
+the type of join to include blogs with 0 entries:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="s">&#39;left outer&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also specify a custom aggregator:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="n">peewee</span><span class="o">.</span><span class="n">Max</span><span class="p">(</span><span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;max_pub_date&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Some typical usage scenarios</a><ul>
+<li><a class="reference internal" href="#creating-a-database-connection-and-tables">Creating a database connection and tables</a></li>
+<li><a class="reference internal" href="#using-with-postgresql">Using with Postgresql</a></li>
+<li><a class="reference internal" href="#using-with-mysql">Using with MySQL</a></li>
+<li><a class="reference internal" href="#creating-a-new-record">Creating a new record</a></li>
+<li><a class="reference internal" href="#getting-a-single-record">Getting a single record</a></li>
+<li><a class="reference internal" href="#selecting-some-records">Selecting some records</a></li>
+<li><a class="reference internal" href="#filtering-records">Filtering records</a></li>
+<li><a class="reference internal" href="#sorting-records">Sorting records</a></li>
+<li><a class="reference internal" href="#paginating-records">Paginating records</a></li>
+<li><a class="reference internal" href="#counting-records">Counting records</a></li>
+<li><a class="reference internal" href="#performing-atomic-updates">Performing atomic updates</a></li>
+<li><a class="reference internal" href="#aggregating-records">Aggregating records</a></li>
+</ul>
+</li>
+</ul>
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="installation.html" title="previous chapter">Installing peewee</a></li>
+      <li>Next: <a href="example.html" title="next chapter">Example app</a></li>
+  </ul></li>
+</ul>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/peewee/uses.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    &copy; Copyright 2011, charles leifer.
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a>.
+  </div>
+  
+  </body>
+</html>

@@ -1,0 +1,890 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Databases &mdash; peewee 0.9.8 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="peewee 0.9.8 documentation" href="../index.html" />
+    <link rel="next" title="Extras" href="extras.html" />
+    <link rel="prev" title="Querying API" href="querying.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="extras.html" title="Extras"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="querying.html" title="Querying API"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="databases">
+<span id="id1"></span><h1>Databases<a class="headerlink" href="#databases" title="Permalink to this headline">¶</a></h1>
+<p>Below the <a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> level, peewee uses an abstraction for representing the database.  The
+<a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> is responsible for establishing and closing connections, making queries,
+and gathering information from the database.</p>
+<p>The <a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> in turn uses another abstraction called an <a class="reference internal" href="#BaseAdapter" title="BaseAdapter"><tt class="xref py py-class docutils literal"><span class="pre">BaseAdapter</span></tt></a>, which
+is backend-specific and encapsulates functionality specific to a given db driver.  Since there
+is some difference in column types across database engines, this information also resides
+in the adapter.  The adapter is responsible for smoothing out the quirks of each database
+driver to provide a consistent interface, for example sqlite uses the question-mark &#8221;?&#8221; character
+for parameter interpolation, while all the other backends use &#8220;%s&#8221;.</p>
+<p>For a high-level overview of working with transactions, check out the <a class="reference internal" href="cookbook.html#working-with-transactions"><em>transactions cookbook</em></a>.</p>
+<p>For notes on deferring instantiation of database, for example if loading configuration
+at run-time, see the notes on <a class="reference internal" href="cookbook.html#deferring-initialization"><em>deferring initialization</em></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The internals of the <a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> and <a class="reference internal" href="#BaseAdapter" title="BaseAdapter"><tt class="xref py py-class docutils literal"><span class="pre">BaseAdapter</span></tt></a> will be
+of interest to anyone interested in adding support for another database driver.</p>
+</div>
+<div class="section" id="writing-a-database-driver">
+<h2>Writing a database driver<a class="headerlink" href="#writing-a-database-driver" title="Permalink to this headline">¶</a></h2>
+<p>Peewee currently supports Sqlite, MySQL and Postgresql.  These databases are very
+popular and run the gamut from fast, embeddable databases to heavyweight servers
+suitable for large-scale deployments.  That being said, there are a ton of cool
+databases out there and adding support for your database-of-choice should be really
+easy, provided the driver supports the <a class="reference external" href="http://www.python.org/dev/peps/pep-0249/">DB-API 2.0 spec</a>.</p>
+<p>The db-api 2.0 spec should be familiar to you if you&#8217;ve used the standard library
+sqlite3 driver, psycopg2 or the like.  Peewee currently relies on a handful of parts:</p>
+<ul class="simple">
+<li><cite>Connection.commit</cite></li>
+<li><cite>Connection.execute</cite></li>
+<li><cite>Connection.rollback</cite></li>
+<li><cite>Cursor.description</cite></li>
+<li><cite>Cursor.fetchone</cite></li>
+<li><cite>Cursor.fetchmany</cite></li>
+</ul>
+<p>These methods are generally wrapped up in higher-level abstractions and exposed
+by the <a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> and <a class="reference internal" href="#BaseAdapter" title="BaseAdapter"><tt class="xref py py-class docutils literal"><span class="pre">BaseAdapter</span></tt></a>, so even if your driver doesn&#8217;t
+do these exactly you can still get a lot of mileage out of peewee.  An example
+is the <a class="reference external" href="http://code.google.com/p/apsw/">apsw sqlite driver</a> which I&#8217;m tinkering with
+adding support for.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">In later versions of peewee, the db-api 2.0 methods may be further abstracted
+out to add support for drivers that don&#8217;t conform to the spec.</p>
+</div>
+<div class="section" id="getting-down-to-it-writing-some-classes">
+<h3>Getting down to it, writing some classes<a class="headerlink" href="#getting-down-to-it-writing-some-classes" title="Permalink to this headline">¶</a></h3>
+<p>There are two classes you will want to implement at the very least:</p>
+<ul>
+<li><dl class="first docutils">
+<dt><a class="reference internal" href="#BaseAdapter" title="BaseAdapter"><tt class="xref py py-class docutils literal"><span class="pre">BaseAdapter</span></tt></a> - handles low-level functionality like opening and closing</dt>
+<dd><p class="first last">connections to the database, as well as describing the features provided by
+the database engine</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> - higher-level interface that executes queries, manage</dt>
+<dd><p class="first last">transactions, and can introspect the underlying db.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Let&#8217;s say we want to add support for a fictitious &#8220;FooDB&#8221; which has an open-source
+python driver that uses the DB-API 2.0.</p>
+</div>
+<div class="section" id="the-adapter">
+<h3>The Adapter<a class="headerlink" href="#the-adapter" title="Permalink to this headline">¶</a></h3>
+<p>The adapter provides a bridge between the driver and peewee&#8217;s higher-level database
+class which is responsible for executing queries.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">peewee</span> <span class="kn">import</span> <span class="n">BaseAdapter</span>
+<span class="kn">import</span> <span class="nn">foodb</span> <span class="c"># our fictional driver</span>
+
+
+<span class="k">class</span> <span class="nc">FooAdapter</span><span class="p">(</span><span class="n">BaseAdapter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">foodb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we want to create a mapping that exposes the operations our database engine
+supports.  These are the operations that a user perform when building out the
+<tt class="docutils literal"><span class="pre">WHERE</span></tt> clause of a given query.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">FooAdapter</span><span class="p">(</span><span class="n">BaseAdapter</span><span class="p">):</span>
+    <span class="n">operations</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;lt&#39;</span><span class="p">:</span> <span class="s">&#39;&lt; </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;lte&#39;</span><span class="p">:</span> <span class="s">&#39;&lt;= </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;gt&#39;</span><span class="p">:</span> <span class="s">&#39;&gt; </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;gte&#39;</span><span class="p">:</span> <span class="s">&#39;&gt;= </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;eq&#39;</span><span class="p">:</span> <span class="s">&#39;= </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;ne&#39;</span><span class="p">:</span> <span class="s">&#39;!= </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;in&#39;</span><span class="p">:</span> <span class="s">&#39;IN (</span><span class="si">%s</span><span class="s">)&#39;</span><span class="p">,</span>
+        <span class="s">&#39;is&#39;</span><span class="p">:</span> <span class="s">&#39;IS </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;isnull&#39;</span><span class="p">:</span> <span class="s">&#39;IS NULL&#39;</span><span class="p">,</span>
+        <span class="s">&#39;between&#39;</span><span class="p">:</span> <span class="s">&#39;BETWEEN </span><span class="si">%s</span><span class="s"> AND </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;icontains&#39;</span><span class="p">:</span> <span class="s">&#39;ILIKE </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;contains&#39;</span><span class="p">:</span> <span class="s">&#39;LIKE </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;istartswith&#39;</span><span class="p">:</span> <span class="s">&#39;ILIKE </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+        <span class="s">&#39;startswith&#39;</span><span class="p">:</span> <span class="s">&#39;LIKE </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">foodb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Other things the adapter handles that are not covered here include:</p>
+<ul class="simple">
+<li>last insert id and number of rows modified</li>
+<li>specifying characters used for string interpolation and quoting identifiers,
+for instance, sqlite uses &#8221;?&#8221; for interpolation and MySQL uses a backtick for quoting</li>
+<li>modifying user input for various lookup types, for instance a &#8220;LIKE&#8221; query will
+surround the incoming phrase with &#8220;%&#8221; characters.</li>
+</ul>
+</div>
+<div class="section" id="the-database-class">
+<h3>The database class<a class="headerlink" href="#the-database-class" title="Permalink to this headline">¶</a></h3>
+<p>The <a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> provides a higher-level API and is responsible for executing queries,
+creating tables and indexes, and introspecting the database to get lists of tables.
+Each database must specify a <a class="reference internal" href="#BaseAdapter" title="BaseAdapter"><tt class="xref py py-class docutils literal"><span class="pre">BaseAdapter</span></tt></a> subclass, so our database will
+need to specify the <tt class="docutils literal"><span class="pre">FooAdapter</span></tt> we just defined:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">peewee</span> <span class="kn">import</span> <span class="n">Database</span>
+
+<span class="k">class</span> <span class="nc">FooDatabase</span><span class="p">(</span><span class="n">Database</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database</span><span class="p">,</span> <span class="o">**</span><span class="n">connect_kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FooDatabase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">FooAdapter</span><span class="p">(),</span> <span class="n">database</span><span class="p">,</span> <span class="o">**</span><span class="n">connect_kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is the absolute minimum needed, though some features will not work &#8211; for best
+results you will want to additionally add a method for extracting a list of tables
+and indexes for a table from the database.  We&#8217;ll pretend that <tt class="docutils literal"><span class="pre">FooDB</span></tt> is a lot like
+MySQL and has special &#8220;SHOW&#8221; statements:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">FooDatabase</span><span class="p">(</span><span class="n">Database</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database</span><span class="p">,</span> <span class="o">**</span><span class="n">connect_kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FooDatabase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">FooAdapter</span><span class="p">(),</span> <span class="n">database</span><span class="p">,</span> <span class="o">**</span><span class="n">connect_kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s">&#39;SHOW TABLES;&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()]</span>
+
+    <span class="k">def</span> <span class="nf">get_indexes_for_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s">&#39;SHOW INDEXES IN </span><span class="si">%s</span><span class="s">;&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">quote_name</span><span class="p">(</span><span class="n">table</span><span class="p">))</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([(</span><span class="n">r</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()])</span>
+        <span class="k">return</span> <span class="n">rows</span>
+</pre></div>
+</div>
+<p>There is a good deal of functionality provided by the Database class that is not
+covered here.  Refer to the documentation below or the <a class="reference external" href="https://github.com/coleifer/peewee/blob/master/peewee.py">source code</a>. for details.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If your driver conforms to the db-api 2.0 spec, there shouldn&#8217;t be
+much work needed to get up and running.</p>
+</div>
+</div>
+<div class="section" id="using-our-new-database">
+<h3>Using our new database<a class="headerlink" href="#using-our-new-database" title="Permalink to this headline">¶</a></h3>
+<p>Our new database can be used just like any of the other database subclasses:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">peewee</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">foodb_ext</span> <span class="kn">import</span> <span class="n">FooDatabase</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">FooDatabase</span><span class="p">(</span><span class="s">&#39;my_database&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;secret&#39;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">db</span>
+
+<span class="k">class</span> <span class="nc">Blog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+    <span class="n">contents</span> <span class="o">=</span> <span class="n">TextField</span><span class="p">()</span>
+    <span class="n">pub_date</span> <span class="o">=</span> <span class="n">DateTimeField</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="database-and-its-subclasses">
+<h2>Database and its subclasses<a class="headerlink" href="#database-and-its-subclasses" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="Database">
+<em class="property">class </em><tt class="descname">Database</tt><a class="headerlink" href="#Database" title="Permalink to this definition">¶</a></dt>
+<dd><p>A high-level api for working with the supported database engines.  <tt class="docutils literal"><span class="pre">Database</span></tt>
+provides a wrapper around some of the functions performed by the <tt class="docutils literal"><span class="pre">Adapter</span></tt>,
+in addition providing support for:</p>
+<ul class="simple">
+<li>execution of SQL queries</li>
+<li>creating and dropping tables and indexes</li>
+</ul>
+<dl class="method">
+<dt id="Database.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>adapter</em>, <em>database</em><span class="optional">[</span>, <em>threadlocals=False</em><span class="optional">[</span>, <em>autocommit=True</em><span class="optional">[</span>, <em>**connect_kwargs</em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#Database.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>adapter</strong> &#8211; an instance of a <a class="reference internal" href="#BaseAdapter" title="BaseAdapter"><tt class="xref py py-class docutils literal"><span class="pre">BaseAdapter</span></tt></a> subclass</li>
+<li><strong>database</strong> &#8211; the name of the database (or filename if using sqlite)</li>
+<li><strong>threadlocals</strong> &#8211; whether to store connections in a threadlocal</li>
+<li><strong>autocommit</strong> &#8211; automatically commit every query executed by calling <a class="reference internal" href="#Database.execute" title="Database.execute"><tt class="xref py py-meth docutils literal"><span class="pre">execute()</span></tt></a></li>
+<li><strong>connect_kwargs</strong> &#8211; any arbitrary parameters to pass to the database driver when connecting</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">if your database name is not known when the class is declared, you can pass
+<tt class="docutils literal"><span class="pre">None</span></tt> in as the database name which will mark the database as &#8220;deferred&#8221;
+and any attempt to connect while in this state will raise an exception.  To
+initialize your database, call the <a class="reference internal" href="#Database.init" title="Database.init"><tt class="xref py py-meth docutils literal"><span class="pre">Database.init()</span></tt></a> method with
+the database name</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.init">
+<tt class="descname">init</tt><big>(</big><em>database</em><span class="optional">[</span>, <em>**connect_kwargs</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#Database.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the database was instantiated with database=None, the database is said to be in
+a &#8216;deferred&#8217; state (see <a class="reference internal" href="cookbook.html#deferring-initialization"><em>notes</em></a>) &#8211; if this is the case,
+you can initialize it at any time by calling the <tt class="docutils literal"><span class="pre">init</span></tt> method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>database</strong> &#8211; the name of the database (or filename if using sqlite)</li>
+<li><strong>connect_kwargs</strong> &#8211; any arbitrary parameters to pass to the database driver when connecting</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.connect">
+<tt class="descname">connect</tt><big>(</big><big>)</big><a class="headerlink" href="#Database.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Establishes a connection to the database</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you initialized with <tt class="docutils literal"><span class="pre">threadlocals=True</span></tt>, then this will store
+the connection inside a threadlocal, ensuring that connections are not
+shared across threads.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#Database.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the connection to the database (if one is open)</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you initialized with <tt class="docutils literal"><span class="pre">threadlocals=True</span></tt>, only a connection local
+to the calling thread will be closed.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.get_conn">
+<tt class="descname">get_conn</tt><big>(</big><big>)</big><a class="headerlink" href="#Database.get_conn" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a connection to the database, creates one if does not exist</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.get_cursor">
+<tt class="descname">get_cursor</tt><big>(</big><big>)</big><a class="headerlink" href="#Database.get_cursor" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a cursor for executing queries</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.set_autocommit">
+<tt class="descname">set_autocommit</tt><big>(</big><em>autocommit</em><big>)</big><a class="headerlink" href="#Database.set_autocommit" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>autocommit</strong> &#8211; a boolean value indicating whether to turn on/off autocommit
+<strong>for the current connection</strong></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.get_autocommit">
+<tt class="descname">get_autocommit</tt><big>(</big><big>)</big><a class="headerlink" href="#Database.get_autocommit" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a boolean value indicating whether autocommit is on <strong>for the current connection</strong></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.execute">
+<tt class="descname">execute</tt><big>(</big><em>sql</em><span class="optional">[</span>, <em>params=None</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#Database.execute" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sql</strong> &#8211; a string sql query</li>
+<li><strong>params</strong> &#8211; a list or tuple of parameters to interpolate</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You can configure whether queries will automatically commit by using
+the <a class="reference internal" href="#Database.set_autocommit" title="Database.set_autocommit"><tt class="xref py py-meth docutils literal"><span class="pre">set_autocommit()</span></tt></a> and <a class="reference internal" href="#Database.get_autocommit" title="Database.get_autocommit"><tt class="xref py py-meth docutils literal"><span class="pre">Database.get_autocommit()</span></tt></a>
+methods.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.commit">
+<tt class="descname">commit</tt><big>(</big><big>)</big><a class="headerlink" href="#Database.commit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call <tt class="docutils literal"><span class="pre">commit()</span></tt> on the active connection, committing the current transaction</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.rollback">
+<tt class="descname">rollback</tt><big>(</big><big>)</big><a class="headerlink" href="#Database.rollback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call <tt class="docutils literal"><span class="pre">rollback()</span></tt> on the active connection, rolling back the current transaction</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.commit_on_success">
+<tt class="descname">commit_on_success</tt><big>(</big><em>func</em><big>)</big><a class="headerlink" href="#Database.commit_on_success" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that wraps the given function in a single transaction, which,
+upon success will be committed.  If an error is raised inside the function,
+the transaction will be rolled back and the error will be re-raised.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>func</strong> &#8211; function to decorate</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@database.commit_on_success</span>
+<span class="k">def</span> <span class="nf">transfer_money</span><span class="p">(</span><span class="n">from_acct</span><span class="p">,</span> <span class="n">to_acct</span><span class="p">,</span> <span class="n">amt</span><span class="p">):</span>
+    <span class="n">from_acct</span><span class="o">.</span><span class="n">charge</span><span class="p">(</span><span class="n">amt</span><span class="p">)</span>
+    <span class="n">to_acct</span><span class="o">.</span><span class="n">pay</span><span class="p">(</span><span class="n">amt</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">amt</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.transaction">
+<tt class="descname">transaction</tt><big>(</big><big>)</big><a class="headerlink" href="#Database.transaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a context manager that executes statements in a transaction.  If an
+error is raised inside the context manager, the transaction will be rolled
+back, otherwise statements are committed when exiting.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># delete a blog instance and all its associated entries, but</span>
+<span class="c"># do so within a transaction</span>
+<span class="k">with</span> <span class="n">database</span><span class="o">.</span><span class="n">transaction</span><span class="p">():</span>
+    <span class="n">blog</span><span class="o">.</span><span class="n">delete_instance</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.last_insert_id">
+<tt class="descname">last_insert_id</tt><big>(</big><em>cursor</em>, <em>model</em><big>)</big><a class="headerlink" href="#Database.last_insert_id" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cursor</strong> &#8211; the database cursor used to perform the insert query</li>
+<li><strong>model</strong> &#8211; the model class that was just created</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">the primary key of the most recently inserted instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.rows_affected">
+<tt class="descname">rows_affected</tt><big>(</big><em>cursor</em><big>)</big><a class="headerlink" href="#Database.rows_affected" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">number of rows affected by the last query</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.create_table">
+<tt class="descname">create_table</tt><big>(</big><em>model_class</em><span class="optional">[</span>, <em>safe=False</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#Database.create_table" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model_class</strong> &#8211; <a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> class to create table for</li>
+<li><strong>safe</strong> &#8211; if <tt class="docutils literal"><span class="pre">True</span></tt>, query will add a <tt class="docutils literal"><span class="pre">IF</span> <span class="pre">NOT</span> <span class="pre">EXISTS</span></tt> clause</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.create_index">
+<tt class="descname">create_index</tt><big>(</big><em>model_class</em>, <em>field_name</em><span class="optional">[</span>, <em>unique=False</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#Database.create_index" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model_class</strong> &#8211; <a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> table on which to create index</li>
+<li><strong>field_name</strong> &#8211; name of field to create index on</li>
+<li><strong>unique</strong> &#8211; whether the index should enforce uniqueness</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.create_foreign_key">
+<tt class="descname">create_foreign_key</tt><big>(</big><em>model_class</em>, <em>field</em><big>)</big><a class="headerlink" href="#Database.create_foreign_key" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model_class</strong> &#8211; <a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> table on which to create foreign key index / constraint</li>
+<li><strong>field</strong> &#8211; <a class="reference internal" href="fields.html#Field" title="Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a> object</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.drop_table">
+<tt class="descname">drop_table</tt><big>(</big><em>model_class</em><span class="optional">[</span>, <em>fail_silently=False</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#Database.drop_table" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model_class</strong> &#8211; <a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> table to drop</li>
+<li><strong>fail_silently</strong> &#8211; if <tt class="docutils literal"><span class="pre">True</span></tt>, query will add a <tt class="docutils literal"><span class="pre">IF</span> <span class="pre">EXISTS</span></tt> clause</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Cascading drop tables are not supported at this time, so if a constraint
+exists that prevents a table being dropped, you will need to handle
+that in application logic.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.create_sequence">
+<tt class="descname">create_sequence</tt><big>(</big><em>sequence_name</em><big>)</big><a class="headerlink" href="#Database.create_sequence" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sequence_name</strong> &#8211; name of sequence to create</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">only works with database engines that support sequences</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.drop_sequence">
+<tt class="descname">drop_sequence</tt><big>(</big><em>sequence_name</em><big>)</big><a class="headerlink" href="#Database.drop_sequence" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sequence_name</strong> &#8211; name of sequence to drop</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">only works with database engines that support sequences</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.get_indexes_for_table">
+<tt class="descname">get_indexes_for_table</tt><big>(</big><em>table</em><big>)</big><a class="headerlink" href="#Database.get_indexes_for_table" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>table</strong> &#8211; the name of table to introspect</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">a list of <tt class="docutils literal"><span class="pre">(index_name,</span> <span class="pre">is_unique)</span></tt> tuples</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Not implemented &#8211; implementations exist in subclasses</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.get_tables">
+<tt class="descname">get_tables</tt><big>(</big><big>)</big><a class="headerlink" href="#Database.get_tables" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a list of table names in the database</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Not implemented &#8211; implementations exist in subclasses</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Database.sequence_exists">
+<tt class="descname">sequence_exists</tt><big>(</big><em>sequence_name</em><big>)</big><a class="headerlink" href="#Database.sequence_exists" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Rtype boolean:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="SqliteDatabase">
+<em class="property">class </em><tt class="descname">SqliteDatabase</tt><big>(</big><em>Database</em><big>)</big><a class="headerlink" href="#SqliteDatabase" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> subclass that communicates to the &#8220;sqlite3&#8221; driver</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="MySQLDatabase">
+<em class="property">class </em><tt class="descname">MySQLDatabase</tt><big>(</big><em>Database</em><big>)</big><a class="headerlink" href="#MySQLDatabase" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> subclass that communicates to the &#8220;MySQLdb&#8221; driver</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="PostgresqlDatabase">
+<em class="property">class </em><tt class="descname">PostgresqlDatabase</tt><big>(</big><em>Database</em><big>)</big><a class="headerlink" href="#PostgresqlDatabase" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> subclass that communicates to the &#8220;psycopg2&#8221; driver</p>
+</dd></dl>
+
+</div>
+<div class="section" id="baseadapter-and-its-subclasses">
+<h2>BaseAdapter and its subclasses<a class="headerlink" href="#baseadapter-and-its-subclasses" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="BaseAdapter">
+<em class="property">class </em><tt class="descname">BaseAdapter</tt><a class="headerlink" href="#BaseAdapter" title="Permalink to this definition">¶</a></dt>
+<dd><p>The various subclasses of <cite>BaseAdapter</cite> provide a bridge between the high-
+level <a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> abstraction and the underlying python libraries like
+psycopg2.  It also provides a way to unify the pythonic field types with
+the underlying column types used by the database engine.</p>
+<p>The <cite>BaseAdapter</cite> provides two types of mappings:
+- mapping between filter operations and their database equivalents
+- mapping between basic field types and their database column types</p>
+<p>The <cite>BaseAdapter</cite> also is the mechanism used by the <a class="reference internal" href="#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> class to:
+- handle connections with the database
+- extract information from the database cursor</p>
+<dl class="attribute">
+<dt>
+<tt class="descname">operations = {'eq': '= %s'}</tt></dt>
+<dd><p>A mapping of query operation to SQL</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">interpolation = '%s'</tt></dt>
+<dd><p>The string used by the driver to interpolate query parameters</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">sequence_support = False</tt></dt>
+<dd><p>Whether the given backend supports sequences</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">reserved_tables = []</tt></dt>
+<dd><p>Table names that are reserved by the backend &#8211; if encountered in the
+application a warning will be issued.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="BaseAdapter.get_field_types">
+<tt class="descname">get_field_types</tt><big>(</big><big>)</big><a class="headerlink" href="#BaseAdapter.get_field_types" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a dictionary mapping &#8220;user-friendly field type&#8221; to specific column type,
+e.g. <tt class="docutils literal"><span class="pre">{'string':</span> <span class="pre">'VARCHAR',</span> <span class="pre">'float':</span> <span class="pre">'REAL',</span> <span class="pre">...</span> <span class="pre">}</span></tt></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="BaseAdapter.get_field_type_overrides">
+<tt class="descname">get_field_type_overrides</tt><big>(</big><big>)</big><a class="headerlink" href="#BaseAdapter.get_field_type_overrides" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a dictionary similar to that returned by <tt class="docutils literal"><span class="pre">get_field_types()</span></tt>.</td>
+</tr>
+</tbody>
+</table>
+<p>Provides a mechanism to override any number of field types without having
+to override all of them.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="BaseAdapter.connect">
+<tt class="descname">connect</tt><big>(</big><em>database</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#BaseAdapter.connect" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>database</strong> &#8211; string representing database name (or filename if using sqlite)</li>
+<li><strong>kwargs</strong> &#8211; any keyword arguments to pass along to the database driver when connecting</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a database connection</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="BaseAdapter.close">
+<tt class="descname">close</tt><big>(</big><em>conn</em><big>)</big><a class="headerlink" href="#BaseAdapter.close" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>conn</strong> &#8211; a database connection</td>
+</tr>
+</tbody>
+</table>
+<p>Close the given database connection</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="BaseAdapter.lookup_cast">
+<tt class="descname">lookup_cast</tt><big>(</big><em>lookup</em>, <em>value</em><big>)</big><a class="headerlink" href="#BaseAdapter.lookup_cast" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>lookup</strong> &#8211; a string representing the lookup type</li>
+<li><strong>value</strong> &#8211; a python value that will be passed in to the lookup</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a converted value appropriate for the given lookup</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Used as a hook when a specific lookup requires altering the given value,
+like for example when performing a LIKE query you may need to insert wildcards.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="BaseAdapter.last_insert_id">
+<tt class="descname">last_insert_id</tt><big>(</big><em>cursor</em>, <em>model</em><big>)</big><a class="headerlink" href="#BaseAdapter.last_insert_id" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">most recently inserted primary key</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="BaseAdapter.rows_affected">
+<tt class="descname">rows_affected</tt><big>(</big><em>cursor</em><big>)</big><a class="headerlink" href="#BaseAdapter.rows_affected" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">number of rows affected by most recent query</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="SqliteAdapter">
+<em class="property">class </em><tt class="descname">SqliteAdapter</tt><big>(</big><em>BaseAdapter</em><big>)</big><a class="headerlink" href="#SqliteAdapter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subclass of <a class="reference internal" href="#BaseAdapter" title="BaseAdapter"><tt class="xref py py-class docutils literal"><span class="pre">BaseAdapter</span></tt></a> that works with the &#8220;sqlite3&#8221; driver</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="MySQLAdapter">
+<em class="property">class </em><tt class="descname">MySQLAdapter</tt><big>(</big><em>BaseAdapter</em><big>)</big><a class="headerlink" href="#MySQLAdapter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subclass of <a class="reference internal" href="#BaseAdapter" title="BaseAdapter"><tt class="xref py py-class docutils literal"><span class="pre">BaseAdapter</span></tt></a> that works with the &#8220;MySQLdb&#8221; driver</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="PostgresqlAdapter">
+<em class="property">class </em><tt class="descname">PostgresqlAdapter</tt><big>(</big><em>BaseAdapter</em><big>)</big><a class="headerlink" href="#PostgresqlAdapter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subclass of <a class="reference internal" href="#BaseAdapter" title="BaseAdapter"><tt class="xref py py-class docutils literal"><span class="pre">BaseAdapter</span></tt></a> that works with the &#8220;psycopg2&#8221; driver</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Databases</a><ul>
+<li><a class="reference internal" href="#writing-a-database-driver">Writing a database driver</a><ul>
+<li><a class="reference internal" href="#getting-down-to-it-writing-some-classes">Getting down to it, writing some classes</a></li>
+<li><a class="reference internal" href="#the-adapter">The Adapter</a></li>
+<li><a class="reference internal" href="#the-database-class">The database class</a></li>
+<li><a class="reference internal" href="#using-our-new-database">Using our new database</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#database-and-its-subclasses">Database and its subclasses</a></li>
+<li><a class="reference internal" href="#baseadapter-and-its-subclasses">BaseAdapter and its subclasses</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="querying.html"
+                        title="previous chapter">Querying API</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="extras.html"
+                        title="next chapter">Extras</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/peewee/database.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="extras.html" title="Extras"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="querying.html" title="Querying API"
+             >previous</a> |</li>
+        <li><a href="../index.html">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, charles leifer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

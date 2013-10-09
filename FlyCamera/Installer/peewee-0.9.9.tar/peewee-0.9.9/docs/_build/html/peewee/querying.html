@@ -1,0 +1,1349 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Querying API &mdash; peewee 0.9.8 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="peewee 0.9.8 documentation" href="../index.html" />
+    <link rel="next" title="Databases" href="database.html" />
+    <link rel="prev" title="Fields" href="fields.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="database.html" title="Databases"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="fields.html" title="Fields"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="querying-api">
+<span id="querying"></span><h1>Querying API<a class="headerlink" href="#querying-api" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="constructing-queries">
+<h2>Constructing queries<a class="headerlink" href="#constructing-queries" title="Permalink to this headline">¶</a></h2>
+<p>Queries in peewee are constructed one piece at a time.</p>
+<p>The &#8220;pieces&#8221; of a peewee query are generally representative of clauses you might
+find in a SQL query.  Most methods are chainable, so you build your query up
+one clause at a time.  This way, rather complex queries are possible.</p>
+<p>Here is a barebones select query:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">user_q</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span> <span class="c"># &lt;-- query is not executed</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user_q</span>
+<span class="go">&lt;peewee.SelectQuery object at 0x7f6b0810c610&gt;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">u</span><span class="o">.</span><span class="n">username</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">user_q</span><span class="p">]</span> <span class="c"># &lt;-- query is evaluated here</span>
+<span class="go">[u&#39;admin&#39;, u&#39;staff&#39;, u&#39;editor&#39;]</span>
+</pre></div>
+</div>
+<p>We can build up the query by adding some clauses to it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">user_q</span> <span class="o">=</span> <span class="n">user_q</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">username__in</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;admin&#39;</span><span class="p">,</span> <span class="s">&#39;editor&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user_q</span> <span class="o">=</span> <span class="n">user_q</span><span class="o">.</span><span class="n">order_by</span><span class="p">((</span><span class="s">&#39;username&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">u</span><span class="o">.</span><span class="n">username</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">user_q</span><span class="p">]</span> <span class="c"># &lt;-- query is re-evaluated here</span>
+<span class="go">[u&#39;editor&#39;, u&#39;admin&#39;]</span>
+</pre></div>
+</div>
+<div class="section" id="django-style-queries">
+<h3>Django-style queries<a class="headerlink" href="#django-style-queries" title="Permalink to this headline">¶</a></h3>
+<p>If you are already familiar with the Django ORM, you can construct <a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a> instances
+using the familiar &#8220;double-underscore&#8221; syntax to generate the proper <tt class="docutils literal"><span class="pre">JOINs</span></tt> and
+<tt class="docutils literal"><span class="pre">WHERE</span></tt> clauses.</p>
+</div>
+<div class="section" id="using-python-operators-to-query">
+<h3>Using python operators to query<a class="headerlink" href="#using-python-operators-to-query" title="Permalink to this headline">¶</a></h3>
+<p>You can use python operators to construct queries.  This is possible by overloading
+operators on field instances.</p>
+</div>
+<div class="section" id="comparing-the-three-methods-of-querying">
+<span id="query-compare"></span><h3>Comparing the three methods of querying<a class="headerlink" href="#comparing-the-three-methods-of-querying" title="Permalink to this headline">¶</a></h3>
+<p>Examples shown are &#8220;default&#8221;, &#8220;django&#8221; and &#8220;python operators&#8221;.</p>
+<dl class="docutils">
+<dt>Get active users:</dt>
+<dd><div class="first last highlight-python"><div class="highlight"><pre><span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="n">User</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">active</span><span class="o">==</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Get users who are either staff or superusers:</dt>
+<dd><div class="first last highlight-python"><div class="highlight"><pre><span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">is_superuser</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+
+<span class="n">User</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">is_superuser</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+
+<span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">User</span><span class="o">.</span><span class="n">is_staff</span><span class="o">==</span><span class="bp">True</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">is_superuser</span><span class="o">==</span><span class="bp">True</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd>
+<dt>Get tweets by user named &#8220;charlie&#8221;:</dt>
+<dd><div class="first last highlight-python"><div class="highlight"><pre><span class="n">Tweet</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;charlie&#39;</span><span class="p">)</span>
+
+<span class="n">Tweet</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user__username</span><span class="o">=</span><span class="s">&#39;charlie&#39;</span><span class="p">)</span>
+
+<span class="n">Tweet</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">username</span><span class="o">==</span><span class="s">&#39;charlie&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Get tweets by staff or superusers (assumes FK relationship):</dt>
+<dd><div class="first last highlight-python"><div class="highlight"><pre><span class="n">Tweet</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+    <span class="n">Q</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">is_superuser</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">Tweet</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">user__is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">user__is_superuser</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+
+<span class="n">Tweet</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">is_staff</span><span class="o">==</span><span class="bp">True</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">is_superuser</span><span class="o">==</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="where-clause">
+<h2>Where clause<a class="headerlink" href="#where-clause" title="Permalink to this headline">¶</a></h2>
+<p>All queries except <a class="reference internal" href="#InsertQuery" title="InsertQuery"><tt class="xref py py-class docutils literal"><span class="pre">InsertQuery</span></tt></a> support the <tt class="docutils literal"><span class="pre">where()</span></tt> method.  If you are
+familiar with Django&#8217;s ORM, it is analagous to the <tt class="docutils literal"><span class="pre">filter()</span></tt> method.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">sql</span><span class="p">()</span>
+<span class="go">(&#39;SELECT * FROM user WHERE is_staff = ?&#39;, [1])</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><tt class="docutils literal"><span class="pre">User.select()</span></tt> is equivalent to <tt class="docutils literal"><span class="pre">SelectQuery(User)</span></tt>.</p>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">where()</span></tt> method acts on the <a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> that is the current &#8220;query context&#8221;.
+This is either:</p>
+<ul class="simple">
+<li>the model the query class was initialized with</li>
+<li>the model most recently JOINed on</li>
+</ul>
+<p>Here is an example using JOINs:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">LIVE</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This query grabs all staff users who have a blog that is &#8220;LIVE&#8221;.  This does the
+opposite, grabs all the blogs that are live whose author is a staffer:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">LIVE</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">to <a class="reference internal" href="#SelectQuery.join" title="SelectQuery.join"><tt class="xref py py-meth docutils literal"><span class="pre">join()</span></tt></a> from one model to another there must be a <a class="reference internal" href="fields.html#ForeignKeyField" title="ForeignKeyField"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyField</span></tt></a> linking the two.</p>
+</div>
+<p>Another way to write the above query would be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">status</span><span class="o">=</span><span class="n">LIVE</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">user__in</span><span class="o">=</span><span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The above bears a little bit of explanation.  First off the SQL generated will
+not perform any explicit <tt class="docutils literal"><span class="pre">JOIN</span></tt> - it will rather use a subquery in the <tt class="docutils literal"><span class="pre">WHERE</span></tt>
+clause:</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="o">#</span> <span class="k">using</span> <span class="n">subqueries</span>
+<span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">blog</span>
+<span class="k">WHERE</span> <span class="p">(</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="o">?</span> <span class="k">AND</span>
+    <span class="n">user_id</span> <span class="k">IN</span> <span class="p">(</span>
+        <span class="k">SELECT</span> <span class="n">t1</span><span class="p">.</span><span class="n">id</span> <span class="k">FROM</span> <span class="k">user</span> <span class="k">AS</span> <span class="n">t1</span> <span class="k">WHERE</span> <span class="n">t1</span><span class="p">.</span><span class="n">is_staff</span> <span class="o">=</span> <span class="o">?</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>And here it is using joins:</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="o">#</span> <span class="k">using</span> <span class="n">joins</span>
+<span class="k">SELECT</span> <span class="n">t1</span><span class="p">.</span><span class="o">*</span> <span class="k">FROM</span> <span class="n">blog</span> <span class="k">AS</span> <span class="n">t1</span>
+<span class="k">INNER</span> <span class="k">JOIN</span> <span class="k">user</span> <span class="k">AS</span> <span class="n">t2</span>
+    <span class="k">ON</span> <span class="n">t1</span><span class="p">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">t2</span><span class="p">.</span><span class="n">id</span>
+<span class="k">WHERE</span>
+    <span class="n">t1</span><span class="p">.</span><span class="n">status</span> <span class="o">=</span> <span class="o">?</span> <span class="k">AND</span>
+    <span class="n">t2</span><span class="p">.</span><span class="n">is_staff</span> <span class="o">=</span> <span class="o">?</span>
+</pre></div>
+</div>
+<div class="section" id="column-lookups">
+<h3>Column lookups<a class="headerlink" href="#column-lookups" title="Permalink to this headline">¶</a></h3>
+<p>The other bit that&#8217;s unique about the query is that it specifies <tt class="docutils literal"><span class="pre">&quot;user__in&quot;</span></tt>.
+Users familiar with Django will recognize this syntax - lookups other than &#8220;=&#8221;
+are signified by a double-underscore followed by the lookup type.  The following
+lookup types are available in peewee:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">__eq</span></tt>:</dt>
+<dd>x = y, the default</dd>
+<dt><tt class="docutils literal"><span class="pre">__lt</span></tt>:</dt>
+<dd>x &lt; y</dd>
+<dt><tt class="docutils literal"><span class="pre">__lte</span></tt>:</dt>
+<dd>x &lt;= y</dd>
+<dt><tt class="docutils literal"><span class="pre">__gt</span></tt>:</dt>
+<dd>x &gt; y</dd>
+<dt><tt class="docutils literal"><span class="pre">__gte</span></tt>:</dt>
+<dd>x &gt;= y</dd>
+<dt><tt class="docutils literal"><span class="pre">__ne</span></tt>:</dt>
+<dd>x != y</dd>
+<dt><tt class="docutils literal"><span class="pre">__is</span></tt>:</dt>
+<dd>x IS y, used for testing against NULL values</dd>
+<dt><tt class="docutils literal"><span class="pre">__contains</span></tt>:</dt>
+<dd>case-sensitive check for substring</dd>
+<dt><tt class="docutils literal"><span class="pre">__icontains</span></tt>:</dt>
+<dd>case-insensitive check for substring</dd>
+<dt><tt class="docutils literal"><span class="pre">__startswith</span></tt>:</dt>
+<dd>case-sensitive check for string prefix</dd>
+<dt><tt class="docutils literal"><span class="pre">__istartswith</span></tt>:</dt>
+<dd>case-insensitive check for string prefix</dd>
+<dt><tt class="docutils literal"><span class="pre">__in</span></tt>:</dt>
+<dd>x IN y, where y is either a list of values or a <a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a></dd>
+</dl>
+</div>
+<div class="section" id="python-operator-overloads">
+<h3>Python operator overloads<a class="headerlink" href="#python-operator-overloads" title="Permalink to this headline">¶</a></h3>
+<p>If you are querying using python operator overloading, different comparisons are
+expressed using python operators.  The following lookups are supported:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">==</span></tt>:</dt>
+<dd>x = y</dd>
+<dt><tt class="docutils literal"><span class="pre">&lt;</span></tt>:</dt>
+<dd>x &lt; y</dd>
+<dt><tt class="docutils literal"><span class="pre">&lt;=</span></tt>:</dt>
+<dd>x &lt;= y</dd>
+<dt><tt class="docutils literal"><span class="pre">&gt;</span></tt>:</dt>
+<dd>x &gt; y</dd>
+<dt><tt class="docutils literal"><span class="pre">&gt;=</span></tt>:</dt>
+<dd>x &gt;= y</dd>
+<dt><tt class="docutils literal"><span class="pre">!=</span></tt>:</dt>
+<dd>x != y</dd>
+<dt><tt class="docutils literal"><span class="pre">*</span></tt>:</dt>
+<dd>case-sensitive check for substring</dd>
+<dt><tt class="docutils literal"><span class="pre">**</span></tt>:</dt>
+<dd>case-insensitive check for substring</dd>
+<dt><tt class="docutils literal"><span class="pre">^</span></tt>:</dt>
+<dd>case-insensitive check for string prefix</dd>
+<dt><tt class="docutils literal"><span class="pre">&gt;&gt;</span></tt>:</dt>
+<dd>x IS (NOT) NULL, depending on if y is True or False</dd>
+<dt><tt class="docutils literal"><span class="pre">&lt;&lt;</span></tt>:</dt>
+<dd>x IN y, where y is either a list of values or a <a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a></dd>
+</dl>
+</div>
+</div>
+<div class="section" id="performing-advanced-queries">
+<h2>Performing advanced queries<a class="headerlink" href="#performing-advanced-queries" title="Permalink to this headline">¶</a></h2>
+<p>As you may have noticed, all the examples up to now have shown queries that
+combine multiple clauses with &#8220;AND&#8221;.  Taking another page from Django&#8217;s ORM,
+peewee allows the creation of arbitrarily complex queries using a special
+notation called <tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> objects.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">is_superuser</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">sq</span><span class="o">.</span><span class="n">sql</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">SELECT * FROM user WHERE (is_staff = ? OR is_superuser = ?)</span>
+</pre></div>
+</div>
+<p><tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> objects can be combined using the bitwise &#8220;or&#8221; and &#8220;and&#8221; operators.  In order
+to negate a <tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> object, use the bitwise &#8220;invert&#8221; operator:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">staff_users</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">Q</span><span class="p">(</span><span class="n">user__in</span><span class="o">=</span><span class="n">staff_users</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This query generates the following SQL:</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">blog</span>
+<span class="k">WHERE</span>
+    <span class="k">NOT</span> <span class="n">user_id</span> <span class="k">IN</span> <span class="p">(</span>
+        <span class="k">SELECT</span> <span class="n">t1</span><span class="p">.</span><span class="n">id</span> <span class="k">FROM</span> <span class="k">user</span> <span class="k">AS</span> <span class="n">t1</span> <span class="k">WHERE</span> <span class="n">t1</span><span class="p">.</span><span class="n">is_staff</span> <span class="o">=</span> <span class="o">?</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>Rather complex lookups are possible:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">is_superuser</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span> <span class="o">&amp;</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">join_date__gte</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2009</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">join_date__lt</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2005</span><span class="p">,</span> <span class="mi">1</span> <span class="mi">1</span><span class="p">)))</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">sq</span><span class="o">.</span><span class="n">sql</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># cleaned up</span>
+<span class="go">SELECT * FROM user</span>
+<span class="go">WHERE (</span>
+<span class="go">    (is_staff = ? OR is_superuser = ?) AND</span>
+<span class="go">    (join_date &gt;= ? OR join_date &lt; ?)</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+<p>This query selects all staff or super users who joined after 2009 or before
+2005.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you need more power, check out <a class="reference internal" href="#RawQuery" title="RawQuery"><tt class="xref py py-class docutils literal"><span class="pre">RawQuery</span></tt></a></p>
+</div>
+<div class="section" id="comparing-against-column-data">
+<h3>Comparing against column data<a class="headerlink" href="#comparing-against-column-data" title="Permalink to this headline">¶</a></h3>
+<p>Suppose you have a model that looks like the following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">WorkerProfiles</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">salary</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+    <span class="n">desired</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>What if we want to query <tt class="docutils literal"><span class="pre">WorkerProfiles</span></tt> to find all the rows where &#8220;salary&#8221; is greater
+than &#8220;desired&#8221; (maybe you want to find out who may be looking for a raise)?</p>
+<p>To solve this problem, peewee borrows the notion of <tt class="xref py py-class docutils literal"><span class="pre">F</span></tt> objects from the django
+orm.  An <tt class="xref py py-class docutils literal"><span class="pre">F</span></tt> object allows you to query against arbitrary data present in
+another column:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">WorkerProfile</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">salary__gt</span><span class="o">=</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;desired&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>That&#8217;s it.  If the other column exists on a model that is accessed via a JOIN,
+you will need to specify that model as the second argument to the <tt class="xref py py-class docutils literal"><span class="pre">F</span></tt>
+object.  Let&#8217;s supposed that the &#8220;desired&#8221; salary exists on a separate model:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">WorkerProfile</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Desired</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">desired_salary__lt</span><span class="o">=</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;salary&#39;</span><span class="p">,</span> <span class="n">WorkerProfile</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="atomic-updates">
+<h3>Atomic updates<a class="headerlink" href="#atomic-updates" title="Permalink to this headline">¶</a></h3>
+<p>The <tt class="xref py py-class docutils literal"><span class="pre">F</span></tt> object also works for updating data.  Suppose you cache counts of tweets for
+every user in a special table to avoid an expensive COUNT() query.  You want to
+update the cache table every time a user tweets, but do so atomically:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">cache_row</span> <span class="o">=</span> <span class="n">CacheCount</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">some_user</span><span class="p">)</span>
+<span class="n">update_query</span> <span class="o">=</span> <span class="n">cache_row</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">tweet_count</span><span class="o">=</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;tweet_count&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">update_query</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="aggregating-records">
+<h3>Aggregating records<a class="headerlink" href="#aggregating-records" title="Permalink to this headline">¶</a></h3>
+<p>Suppose you have some blogs and want to get a list of them along with the count
+of entries in each.  First I will show you the shortcut:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is equivalent to the following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">({</span>
+    <span class="n">Blog</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+    <span class="n">Entry</span><span class="p">:</span> <span class="p">[</span><span class="n">Count</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)],</span>
+<span class="p">})</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The resulting query will return <tt class="docutils literal"><span class="pre">Blog</span></tt> objects with all their normal attributes
+plus an additional attribute &#8216;count&#8217; which will contain the number of entries.
+By default it uses an inner join if the foreign key is not nullable, which means
+blogs without entries won&#8217;t appear in the list.  To remedy this, manually specify
+the type of join to include blogs with 0 entries:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="s">&#39;left outer&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also specify a custom aggregator:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">query</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="n">peewee</span><span class="o">.</span><span class="n">Max</span><span class="p">(</span><span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;max_pub_date&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Conversely, sometimes you want to perform an aggregate query that returns a
+scalar value, like the &#8220;max id&#8221;.  Queries like this can be executed by using
+the <a class="reference internal" href="#SelectQuery.aggregate" title="SelectQuery.aggregate"><tt class="xref py py-meth docutils literal"><span class="pre">aggregate()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">max_id</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="n">Max</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sql-functions-raw-expressions-and-the-r-object">
+<h3>SQL Functions, &#8220;Raw expressions&#8221; and the R() object<a class="headerlink" href="#sql-functions-raw-expressions-and-the-r-object" title="Permalink to this headline">¶</a></h3>
+<p>If you&#8217;ve been reading in order, you will have already seen the <tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> and
+<tt class="xref py py-class docutils literal"><span class="pre">F</span></tt> objects.  The <tt class="xref py py-class docutils literal"><span class="pre">R</span></tt> object is the final query helper and its
+purpose is to allow you to express arbitrary expressions as part of your structured
+query without having to result to using a <a class="reference internal" href="#RawQuery" title="RawQuery"><tt class="xref py py-class docutils literal"><span class="pre">RawQuery</span></tt></a>.</p>
+<p>Selecting users whose username begins with &#8220;a&#8221;:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># select the users&#39; id, username and the first letter of their username, lower-cased</span>
+<span class="n">query</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;username&#39;</span><span class="p">,</span> <span class="n">R</span><span class="p">(</span><span class="s">&#39;LOWER(SUBSTR(username, 1, 1))&#39;</span><span class="p">,</span> <span class="s">&#39;first_letter&#39;</span><span class="p">)])</span>
+
+<span class="c"># now filter this list to include only users whose username begins with &quot;a&quot;</span>
+<span class="n">a_users</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">R</span><span class="p">(</span><span class="s">&#39;first_letter=</span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">))</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">a_users</span><span class="p">:</span>
+<span class="o">...</span>    <span class="k">print</span> <span class="n">user</span><span class="o">.</span><span class="n">first_letter</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">username</span>
+
+<span class="n">a</span> <span class="n">alpha</span>
+<span class="n">A</span> <span class="n">Alton</span>
+</pre></div>
+</div>
+<p>This same functionality could be easily exposed as part of the where clause, the
+only difference being that the first letter is not selected and therefore not an
+attribute of the model instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">a_users</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">R</span><span class="p">(</span><span class="s">&#39;LOWER(SUBSTR(username, 1, 1)) = </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>We can query for multiple values using <tt class="xref py py-class docutils literal"><span class="pre">R</span></tt> objects, for example selecting
+users whose usernames begin with a range of letters &#8220;b&#8221; through &#8220;d&#8221;:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">letters</span> <span class="o">=</span>  <span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;d&#39;</span><span class="p">)</span>
+<span class="n">bcd_users</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">R</span><span class="p">(</span><span class="s">&#39;LOWER(SUBSTR(username, 1, 1)) IN (</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">)&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">letters</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>We can write subqueries as part of a <a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a>, for example counting
+the number of entries on a blog:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">entry_query</span> <span class="o">=</span> <span class="n">R</span><span class="p">(</span><span class="s">&#39;(SELECT COUNT(*) FROM entry WHERE entry.blog_id=blog.id)&#39;</span><span class="p">,</span> <span class="s">&#39;entry_count&#39;</span><span class="p">)</span>
+<span class="n">blogs</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;title&#39;</span><span class="p">,</span> <span class="n">entry_query</span><span class="p">])</span><span class="o">.</span><span class="n">order_by</span><span class="p">((</span><span class="s">&#39;entry_count&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">blog</span> <span class="ow">in</span> <span class="n">blogs</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">blog</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">blog</span><span class="o">.</span><span class="n">entry_count</span>
+</pre></div>
+</div>
+<p>It is also possible to use subqueries as part of a where clause, for example finding
+blogs that have no entries:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">no_entry_query</span> <span class="o">=</span> <span class="n">R</span><span class="p">(</span><span class="s">&#39;NOT EXISTS (SELECT * FROM entry WHERE entry.blog_id=blog.id)&#39;</span><span class="p">)</span>
+<span class="n">blogs</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">no_entry_query</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">blog</span> <span class="ow">in</span> <span class="n">blogs</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">blog</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s">&#39; has no entries&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="saving-queries-by-selecting-related-models">
+<h3>Saving Queries by Selecting Related Models<a class="headerlink" href="#saving-queries-by-selecting-related-models" title="Permalink to this headline">¶</a></h3>
+<p>Returning to my favorite models, <tt class="docutils literal"><span class="pre">Blog</span></tt> and <tt class="docutils literal"><span class="pre">Entry</span></tt>, between which there is a
+<a class="reference internal" href="fields.html#ForeignKeyField" title="ForeignKeyField"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyField</span></tt></a>, a common pattern might be to display a list of the
+latest 10 entries with some info about the blog they&#8217;re on as well.  We can do
+this pretty easily:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">((</span><span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">, posted on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">blog</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Looking at the query log, though, this will cause 11 queries:</p>
+<ul class="simple">
+<li>1 query for the entries</li>
+<li>1 query for every related blog (10 total)</li>
+</ul>
+<p>This can be optimized into one query very easily, though:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">entries</span> <span class="o">=</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">({</span>
+    <span class="n">Entry</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+    <span class="n">Blog</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+<span class="p">})</span><span class="o">.</span><span class="n">order_by</span><span class="p">((</span><span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">entries</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">, posted on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">blog</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Will cause only one query that looks something like this:</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="n">t1</span><span class="p">.</span><span class="n">pk</span><span class="p">,</span> <span class="n">t1</span><span class="p">.</span><span class="n">title</span><span class="p">,</span> <span class="n">t1</span><span class="p">.</span><span class="n">content</span><span class="p">,</span> <span class="n">t1</span><span class="p">.</span><span class="n">pub_date</span><span class="p">,</span> <span class="n">t1</span><span class="p">.</span><span class="n">blog_id</span><span class="p">,</span> <span class="n">t2</span><span class="p">.</span><span class="n">id</span><span class="p">,</span> <span class="n">t2</span><span class="p">.</span><span class="n">title</span>
+<span class="k">FROM</span> <span class="n">entry</span> <span class="k">AS</span> <span class="n">t1</span>
+<span class="k">INNER</span> <span class="k">JOIN</span> <span class="n">blog</span> <span class="k">AS</span> <span class="n">t2</span>
+    <span class="k">ON</span> <span class="n">t1</span><span class="p">.</span><span class="n">blog_id</span> <span class="o">=</span> <span class="n">t2</span><span class="p">.</span><span class="n">id</span>
+<span class="k">ORDER</span> <span class="k">BY</span> <span class="n">t1</span><span class="p">.</span><span class="n">pub_date</span> <span class="k">desc</span>
+<span class="k">LIMIT</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<p>peewee will handle constructing the objects and you can access them as you would
+normally.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Note in the above example the call to <tt class="docutils literal"><span class="pre">.join(Blog)</span></tt></p>
+</div>
+<p>This works for following objects &#8220;up&#8221; the chain, i.e. following foreign key relationships.
+The reverse is not true, however &#8211; you cannot issue a single query and get all related
+sub-objects, i.e. list blogs and prefetch all related entries.  This <em>can</em> be done by
+fetching all entries (with related blog data), then reconstructing the blogs in python, but
+is not provided as part of peewee.  For a detailed discussion of working
+around this, see the <a class="reference external" href="https://groups.google.com/forum/?fromgroups#!topic/peewee-orm/RLd2r-eKp7w">discussion here</a>.</p>
+</div>
+<div class="section" id="speeding-up-simple-select-queries">
+<h3>Speeding up simple select queries<a class="headerlink" href="#speeding-up-simple-select-queries" title="Permalink to this headline">¶</a></h3>
+<p>Simple select queries can get a performance boost (especially when iterating over large
+result sets) by calling <a class="reference internal" href="#SelectQuery.naive" title="SelectQuery.naive"><tt class="xref py py-meth docutils literal"><span class="pre">naive()</span></tt></a>.  This method simply patches all
+attributes directly from the cursor onto the model.  For simple queries this should have
+no noticeable impact.  The main difference is when multiple tables are queried, as in the
+previous example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># above example</span>
+<span class="n">entries</span> <span class="o">=</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">({</span>
+    <span class="n">Entry</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+    <span class="n">Blog</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+<span class="p">})</span><span class="o">.</span><span class="n">order_by</span><span class="p">((</span><span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">entries</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">, posted on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">blog</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And here is how you would do the same if using a naive query:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># very similar query to the above -- main difference is we&#39;re</span>
+<span class="c"># aliasing the blog title to &quot;blog_title&quot;</span>
+<span class="n">entries</span> <span class="o">=</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">({</span>
+    <span class="n">Entry</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+    <span class="n">Blog</span><span class="p">:</span> <span class="p">[(</span><span class="s">&#39;title&#39;</span><span class="p">,</span> <span class="s">&#39;blog_title&#39;</span><span class="p">)],</span>
+<span class="p">})</span><span class="o">.</span><span class="n">order_by</span><span class="p">((</span><span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span>
+
+<span class="n">entries</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="n">naive</span><span class="p">()</span>
+
+<span class="c"># now instead of calling &quot;entry.blog.title&quot; the blog&#39;s title</span>
+<span class="c"># is exposed directly on the entry model as &quot;blog_title&quot; and</span>
+<span class="c"># no blog instance is created</span>
+<span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">entries</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">, posted on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">blog_title</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="query-evaluation">
+<h2>Query evaluation<a class="headerlink" href="#query-evaluation" title="Permalink to this headline">¶</a></h2>
+<p>In order to execute a query, it is <em>always</em> necessary to call the <tt class="docutils literal"><span class="pre">execute()</span></tt>
+method.</p>
+<p>To get a better idea of how querying works let&#8217;s look at some example queries
+and their return values:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">dq</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="c"># &lt;-- returns a DeleteQuery</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dq</span>
+<span class="go">&lt;peewee.DeleteQuery object at 0x7fc866ada4d0&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dq</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span> <span class="c"># &lt;-- executes the query and returns number of rows deleted</span>
+<span class="go">3</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">uq</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">id__gt</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="c"># &lt;-- returns an UpdateQuery</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">uq</span>
+<span class="go">&lt;peewee.UpdateQuery object at 0x7fc865beff50&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">uq</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span> <span class="c"># &lt;-- executes the query and returns number of rows updated</span>
+<span class="go">2</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iq</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;new user&#39;</span><span class="p">)</span> <span class="c"># &lt;-- returns an InsertQuery</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iq</span>
+<span class="go">&lt;peewee.InsertQuery object at 0x7fc865beff10&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iq</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span> <span class="c"># &lt;-- executes query and returns the new row&#39;s PK</span>
+<span class="go">3</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="c"># &lt;-- returns a SelectQuery</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span>
+<span class="go">&lt;peewee.SelectQuery object at 0x7fc865b7a510&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span> <span class="o">=</span> <span class="n">sq</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span> <span class="c"># &lt;-- executes query and returns a QueryResultWrapper</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qr</span>
+<span class="go">&lt;peewee.QueryResultWrapper object at 0x7fc865b7a6d0&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">u</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">qr</span><span class="p">]</span>
+<span class="go">[1, 2, 3, 4, 7, 8]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">u</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">qr</span><span class="p">]</span> <span class="c"># &lt;-- re-iterating over qr does not re-execute query</span>
+<span class="go">[1, 2, 3, 4, 7, 8]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">u</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">sq</span><span class="p">]</span> <span class="c"># &lt;-- as a shortcut, you can iterate directly over</span>
+<span class="gp">&gt;&gt;&gt; </span>                   <span class="c">#     a SelectQuery (which uses a QueryResultWrapper</span>
+<span class="gp">&gt;&gt;&gt; </span>                   <span class="c">#     behind-the-scenes)</span>
+<span class="go">[1, 2, 3, 4, 7, 8]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Iterating over a <a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a> will cause it to be evaluated, but iterating
+over it multiple times will not result in the query being executed again.</p>
+</div>
+</div>
+<div class="section" id="queryresultwrapper">
+<h2>QueryResultWrapper<a class="headerlink" href="#queryresultwrapper" title="Permalink to this headline">¶</a></h2>
+<p>As I hope the previous bit showed, <tt class="docutils literal"><span class="pre">Delete</span></tt>, <tt class="docutils literal"><span class="pre">Insert</span></tt> and <tt class="docutils literal"><span class="pre">Update</span></tt> queries are all
+pretty straightforward.  <tt class="docutils literal"><span class="pre">Select</span></tt> queries are a little bit tricky in that they
+return a special object called a <tt class="xref py py-class docutils literal"><span class="pre">QueryResultWrapper</span></tt>.  The sole purpose of this
+class is to allow the results of a query to be iterated over efficiently.  In
+general it should not need to be dealt with explicitly.</p>
+<p>The preferred method of iterating over a result set is to iterate directly over
+the <a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a>, allowing it to manage the <tt class="xref py py-class docutils literal"><span class="pre">QueryResultWrapper</span></tt> internally.</p>
+</div>
+<div class="section" id="selectquery">
+<h2>SelectQuery<a class="headerlink" href="#selectquery" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="SelectQuery">
+<em class="property">class </em><tt class="descname">SelectQuery</tt><a class="headerlink" href="#SelectQuery" title="Permalink to this definition">¶</a></dt>
+<dd><p>By far the most complex of the 4 query classes available in
+peewee.  It supports <tt class="docutils literal"><span class="pre">JOIN</span></tt> operations on other tables, aggregation via <tt class="docutils literal"><span class="pre">GROUP</span> <span class="pre">BY</span></tt> and <tt class="docutils literal"><span class="pre">HAVING</span></tt>
+clauses, ordering via <tt class="docutils literal"><span class="pre">ORDER</span> <span class="pre">BY</span></tt>, and can be iterated and sliced to return only a subset of
+results.</p>
+<dl class="method">
+<dt id="SelectQuery.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>model</em>, <em>query=None</em><big>)</big><a class="headerlink" href="#SelectQuery.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> &#8211; a <a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> class to perform query on</li>
+<li><strong>query</strong> &#8211; either a dictionary, keyed by model with a list of columns, or a string of columns</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>If no query is provided, it will default to <tt class="docutils literal"><span class="pre">'*'</span></tt>.  this parameter can be
+either a dictionary or a string:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">SelectQuery</span><span class="p">(</span><span class="n">Blog</span><span class="p">,</span> <span class="p">{</span><span class="n">Blog</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;title&#39;</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">SelectQuery</span><span class="p">(</span><span class="n">Blog</span><span class="p">,</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="n">Blog</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">Entry</span><span class="p">:</span> <span class="p">[</span><span class="n">peewee</span><span class="o">.</span><span class="n">Count</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)]</span>
+<span class="gp">... </span><span class="p">})</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">sq</span><span class="o">.</span><span class="n">sql</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># formatted</span>
+<span class="go">SELECT t1.*, COUNT(t2.id) AS count</span>
+<span class="go">FROM blog AS t1</span>
+<span class="go">INNER JOIN entry AS t2</span>
+<span class="go">    ON t1.id = t2.blog_id</span>
+<span class="go">GROUP BY t1.id</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">SelectQuery</span><span class="p">(</span><span class="n">Blog</span><span class="p">,</span> <span class="s">&#39;id, title&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">sq</span><span class="o">.</span><span class="n">sql</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">SELECT id, title FROM blog</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.filter">
+<tt class="descname">filter</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#SelectQuery.filter" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> &#8211; a list of <tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> or <tt class="xref py py-class docutils literal"><span class="pre">Node</span></tt> objects</li>
+<li><strong>kwargs</strong> &#8211; a mapping of column + lookup to value, e.g. &#8220;age__gt=55&#8221;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a <a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a> instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Provides a django-like syntax for building a query.
+The key difference between <a class="reference internal" href="#SelectQuery.filter" title="SelectQuery.filter"><tt class="xref py py-meth docutils literal"><span class="pre">filter()</span></tt></a> and <a class="reference internal" href="#SelectQuery.where" title="SelectQuery.where"><tt class="xref py py-meth docutils literal"><span class="pre">where()</span></tt></a> is that <tt class="docutils literal"><span class="pre">filter</span></tt>
+supports traversing joins using django&#8217;s &#8220;double-underscore&#8221; syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">SelectQuery</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">blog__title</span><span class="o">=</span><span class="s">&#39;Some Blog&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This method is chainable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">base_q</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">some_user</span> <span class="o">=</span> <span class="n">base_q</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;charlie&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#SelectQuery.get" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> &#8211; a list of <tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> or <tt class="xref py py-class docutils literal"><span class="pre">Node</span></tt> objects</li>
+<li><strong>kwargs</strong> &#8211; a mapping of column + lookup to value, e.g. &#8220;age__gt=55&#8221;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> instance or raises <tt class="docutils literal"><span class="pre">DoesNotExist</span></tt> exception</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Get a single row from the database that matches the given query.  Raises a
+<tt class="docutils literal"><span class="pre">&lt;model-class&gt;.DoesNotExist</span></tt> if no rows are returned:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">active</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">user</span> <span class="o">=</span> <span class="n">active</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">except</span> <span class="n">User</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">user</span> <span class="o">=</span> <span class="bp">None</span>
+</pre></div>
+</div>
+<p>This method is also exposed via the <a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> api:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.where">
+<tt class="descname">where</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#SelectQuery.where" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> &#8211; a list of <tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> or <tt class="xref py py-class docutils literal"><span class="pre">Node</span></tt> objects</li>
+<li><strong>kwargs</strong> &#8211; a mapping of column + lookup to value, e.g. &#8220;age__gt=55&#8221;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a <a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a> instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Calling <tt class="docutils literal"><span class="pre">where()</span></tt> will act on the model that is currently the <tt class="docutils literal"><span class="pre">query</span> <span class="pre">context</span></tt>.
+Unlike <a class="reference internal" href="#SelectQuery.filter" title="SelectQuery.filter"><tt class="xref py py-meth docutils literal"><span class="pre">filter()</span></tt></a>, only columns from the current query context are exposed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">SelectQuery</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;some title&#39;</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="n">some_user</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">SelectQuery</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;some title&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;other title&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference internal" href="#SelectQuery.where" title="SelectQuery.where"><tt class="xref py py-meth docutils literal"><span class="pre">where()</span></tt></a> calls are chainable</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.join">
+<tt class="descname">join</tt><big>(</big><em>model</em>, <em>join_type=None</em>, <em>on=None</em>, <em>alias=None</em><big>)</big><a class="headerlink" href="#SelectQuery.join" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>model</strong> &#8211; the model to join on.  there must be a <a class="reference internal" href="fields.html#ForeignKeyField" title="ForeignKeyField"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyField</span></tt></a> between
+the current <tt class="docutils literal"><span class="pre">query</span> <span class="pre">context</span></tt> and the model passed in.</li>
+<li><strong>join_type</strong> &#8211; allows the type of <tt class="docutils literal"><span class="pre">JOIN</span></tt> used to be specified explicitly</li>
+<li><strong>on</strong> &#8211; if multiple foreign keys exist between two models, this parameter
+is a string containing the name of the ForeignKeyField to join on.</li>
+<li><strong>alias</strong> &#8211; if provided, will be the name used to alias columns from this table in query</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a <a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a> instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Generate a <tt class="docutils literal"><span class="pre">JOIN</span></tt> clause from the current <tt class="docutils literal"><span class="pre">query</span> <span class="pre">context</span></tt> to the <tt class="docutils literal"><span class="pre">model</span></tt> passed
+in, and establishes <tt class="docutils literal"><span class="pre">model</span></tt> as the new <tt class="docutils literal"><span class="pre">query</span> <span class="pre">context</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">SelectQuery</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;Some Entry&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">SelectQuery</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Relationship</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s">&#39;to_user_id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">from_user</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.naive">
+<tt class="descname">naive</tt><big>(</big><big>)</big><a class="headerlink" href="#SelectQuery.naive" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+<p>indicates that this query should only attempt to reconstruct a single model
+instance for every row returned by the cursor.  if multiple tables were queried,
+the columns returned are patched directly onto the single model instance.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">this can provide a significant speed improvement when doing simple
+iteration over a large result set.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.switch">
+<tt class="descname">switch</tt><big>(</big><em>model</em><big>)</big><a class="headerlink" href="#SelectQuery.switch" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> &#8211; model to switch the <tt class="docutils literal"><span class="pre">query</span> <span class="pre">context</span></tt> to.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">a <a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a> instance</td>
+</tr>
+</tbody>
+</table>
+<p>Switches the <tt class="docutils literal"><span class="pre">query</span> <span class="pre">context</span></tt> to the given model.  Raises an exception if the
+model has not been selected or joined on previously.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">SelectQuery</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span><span class="o">.</span><span class="n">switch</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;Some Blog&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.count">
+<tt class="descname">count</tt><big>(</big><big>)</big><a class="headerlink" href="#SelectQuery.count" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">an integer representing the number of rows in the current query</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">SelectQuery</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="go">45 # &lt;-- number of blogs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">DELETED</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="go">3 # &lt;-- number of blogs that are marked as deleted</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.exists">
+<tt class="descname">exists</tt><big>(</big><big>)</big><a class="headerlink" href="#SelectQuery.exists" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">boolean whether the current query will return any rows.  uses an
+optimized lookup, so use this rather than <a class="reference internal" href="#SelectQuery.get" title="SelectQuery.get"><tt class="xref py py-meth docutils literal"><span class="pre">get()</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">sq</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="n">authenticated</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.annotate">
+<tt class="descname">annotate</tt><big>(</big><em>related_model</em>, <em>aggregation=None</em><big>)</big><a class="headerlink" href="#SelectQuery.annotate" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>related_model</strong> &#8211; related <a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> on which to perform aggregation,
+must be linked by <a class="reference internal" href="fields.html#ForeignKeyField" title="ForeignKeyField"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyField</span></tt></a>.</li>
+<li><strong>aggregation</strong> &#8211; the type of aggregation to use, e.g. <tt class="docutils literal"><span class="pre">Max('pub_date',</span> <span class="pre">'max_pub')</span></tt></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Annotate a query with an aggregation performed on a related model, for example,
+&#8220;get a list of blogs with the number of entries on each&#8221;:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>if <tt class="docutils literal"><span class="pre">aggregation</span></tt> is None, it will default to <tt class="docutils literal"><span class="pre">Count(related_model,</span> <span class="pre">'count')</span></tt>,
+but can be anything:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blog_with_latest</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="n">Max</span><span class="p">(</span><span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;max_pub&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>If the <tt class="docutils literal"><span class="pre">ForeignKeyField</span></tt> is <tt class="docutils literal"><span class="pre">nullable</span></tt>, then a <tt class="docutils literal"><span class="pre">LEFT</span> <span class="pre">OUTER</span></tt> join
+will be used, otherwise the join is an <tt class="docutils literal"><span class="pre">INNER</span></tt> join.  If an <tt class="docutils literal"><span class="pre">INNER</span></tt>
+join is used, in the above example blogs with no entries would not be
+returned.  To avoid this, you can explicitly join before calling <tt class="docutils literal"><span class="pre">annotate()</span></tt>:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="s">&#39;left outer&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.aggregate">
+<tt class="descname">aggregate</tt><big>(</big><em>aggregation</em><big>)</big><a class="headerlink" href="#SelectQuery.aggregate" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>aggregation</strong> &#8211; a function specifying what aggregation to perform, for
+example <tt class="docutils literal"><span class="pre">Max('id')</span></tt>.  This can be a 3-tuple if you would like to perform
+a custom aggregation: <tt class="docutils literal"><span class="pre">(&quot;Max&quot;,</span> <span class="pre">&quot;id&quot;,</span> <span class="pre">&quot;max_id&quot;)</span></tt>.</td>
+</tr>
+</tbody>
+</table>
+<p>Method to look at an aggregate of rows using a given function and
+return a scalar value, such as the count of all rows or the average
+value of a particular column.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.group_by">
+<tt class="descname">group_by</tt><big>(</big><em>clause</em><big>)</big><a class="headerlink" href="#SelectQuery.group_by" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>clause</strong> &#8211; either a single field name or a list of field names, in
+which case it takes its context from the current query_context.  it can
+<em>also</em> be a model class, in which case all that models fields will be
+included in the <tt class="docutils literal"><span class="pre">GROUP</span> <span class="pre">BY</span></tt> clause</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># get a list of blogs with the count of entries each has</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="n">Blog</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">Entry</span><span class="p">:</span> <span class="p">[</span><span class="n">Count</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)]</span>
+<span class="gp">... </span><span class="p">})</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># slightly more complex, get a list of blogs ordered by most recent pub_date</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="n">Blog</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">Entry</span><span class="p">:</span> <span class="p">[</span><span class="n">Max</span><span class="p">(</span><span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;max_pub_date&#39;</span><span class="p">)],</span>
+<span class="gp">... </span><span class="p">})</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># now, group by the entry&#39;s blog id, followed by all the blog fields</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">sq</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="s">&#39;blog_id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># finally, order our results by max pub date</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">sq</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">peewee</span><span class="o">.</span><span class="n">desc</span><span class="p">(</span><span class="s">&#39;max_pub_date&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.having">
+<tt class="descname">having</tt><big>(</big><em>clause</em><big>)</big><a class="headerlink" href="#SelectQuery.having" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>clause</strong> &#8211; Expression to use as the <tt class="docutils literal"><span class="pre">HAVING</span></tt> clause</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="n">Blog</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">Entry</span><span class="p">:</span> <span class="p">[</span><span class="n">Count</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;num_entries&#39;</span><span class="p">)]</span>
+<span class="gp">... </span><span class="p">})</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span><span class="o">.</span><span class="n">having</span><span class="p">(</span><span class="s">&#39;num_entries &gt; 10&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.order_by">
+<tt class="descname">order_by</tt><big>(</big><em>*clauses</em><big>)</big><a class="headerlink" href="#SelectQuery.order_by" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>clauses</strong> &#8211; Expression(s) to use as the <tt class="docutils literal"><span class="pre">ORDER</span> <span class="pre">BY</span></tt> clause, see notes below</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Adds the provided clause (a field name or alias) to the query&#8217;s
+<tt class="docutils literal"><span class="pre">ORDER</span> <span class="pre">BY</span></tt> clause.  It can be either a single field name, in which
+case it will apply to the current query context, or a 2- or 3-tuple.</p>
+<p>The 2-tuple can be either <tt class="docutils literal"><span class="pre">(Model,</span> <span class="pre">'field_name')</span></tt> or <tt class="docutils literal"><span class="pre">('field_name',</span> <span class="pre">'ASC'/'DESC')</span></tt>.</p>
+<p>The 3-tuple is <tt class="docutils literal"><span class="pre">(Model,</span> <span class="pre">'field_name',</span> <span class="pre">'ASC'/'DESC')</span></tt>.</p>
+<p class="last">If the field is not found on the model evaluated against, it will be
+treated as an alias.</p>
+</div>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;title&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="n">Blog</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">Entry</span><span class="p">:</span> <span class="p">[</span><span class="n">Max</span><span class="p">(</span><span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;max_pub&#39;</span><span class="p">)]</span>
+<span class="gp">... </span><span class="p">})</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="s">&#39;max_pub&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>slightly more complex example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">Entry</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Blog</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="n">Blog</span><span class="p">,</span> <span class="s">&#39;title&#39;</span><span class="p">),</span> <span class="c"># order by blog title ascending</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="s">&#39;pub_date&#39;</span><span class="p">,</span> <span class="s">&#39;DESC&#39;</span><span class="p">),</span> <span class="c"># then order by entry pub date desc</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>check out how the <tt class="docutils literal"><span class="pre">query</span> <span class="pre">context</span></tt> applies to ordering:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blog_title</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;title&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">blog_title</span><span class="o">.</span><span class="n">sql</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">SELECT t1.* FROM blog AS t1</span>
+<span class="go">INNER JOIN entry AS t2</span>
+<span class="go">    ON t1.id = t2.blog_id</span>
+<span class="go">ORDER BY t1.title</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">entry_title</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Entry</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;title&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">entry_title</span><span class="o">.</span><span class="n">sql</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">SELECT t1.* FROM blog AS t1</span>
+<span class="go">INNER JOIN entry AS t2</span>
+<span class="go">    ON t1.id = t2.blog_id</span>
+<span class="go">ORDER BY t2.title # &lt;-- note that it&#39;s using the title on Entry this time</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.paginate">
+<tt class="descname">paginate</tt><big>(</big><em>page_num</em>, <em>paginate_by=20</em><big>)</big><a class="headerlink" href="#SelectQuery.paginate" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>page_num</strong> &#8211; a 1-based page number to use for paginating results</li>
+<li><strong>paginate_by</strong> &#8211; number of results to return per-page</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>applies a <tt class="docutils literal"><span class="pre">LIMIT</span></tt> and <tt class="docutils literal"><span class="pre">OFFSET</span></tt> to the query.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;username&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="c"># &lt;-- get blogs 41-60</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.distinct">
+<tt class="descname">distinct</tt><big>(</big><big>)</big><a class="headerlink" href="#SelectQuery.distinct" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+<p>indicates that this query should only return distinct rows.  results in a
+<tt class="docutils literal"><span class="pre">SELECT</span> <span class="pre">DISTINCT</span></tt> query.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.execute">
+<tt class="descname">execute</tt><big>(</big><big>)</big><a class="headerlink" href="#SelectQuery.execute" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">QueryResultWrapper</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>Executes the query and returns a <tt class="xref py py-class docutils literal"><span class="pre">QueryResultWrapper</span></tt> for iterating over
+the result set.  The results are managed internally by the query and whenever
+a clause is added that would possibly alter the result set, the query is
+marked for re-execution.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="SelectQuery.__iter__">
+<tt class="descname">__iter__</tt><big>(</big><big>)</big><a class="headerlink" href="#SelectQuery.__iter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the query:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">user</span><span class="o">.</span><span class="n">username</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="updatequery">
+<h2>UpdateQuery<a class="headerlink" href="#updatequery" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="UpdateQuery">
+<em class="property">class </em><tt class="descname">UpdateQuery</tt><a class="headerlink" href="#UpdateQuery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used for updating rows in the database.</p>
+<dl class="method">
+<dt id="UpdateQuery.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>model</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#UpdateQuery.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> &#8211; <a class="reference internal" href="models.html#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> class on which to perform update</li>
+<li><strong>kwargs</strong> &#8211; mapping of field/value pairs containing columns and values to update</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">uq</span> <span class="o">=</span> <span class="n">UpdateQuery</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">registration_expired</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">uq</span><span class="o">.</span><span class="n">sql</span><span class="p">()</span>
+<span class="go">(&#39;UPDATE user SET active=? WHERE registration_expired = ?&#39;, [0, True])</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">atomic_update</span> <span class="o">=</span> <span class="n">UpdateQuery</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">message_count</span><span class="o">=</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;message_count&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">atomic_update</span><span class="o">.</span><span class="n">sql</span><span class="p">()</span>
+<span class="go">(&#39;UPDATE user SET message_count=(message_count + 1) WHERE id = ?&#39;, [3])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="UpdateQuery.where">
+<tt class="descname">where</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#UpdateQuery.where" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> &#8211; a list of <tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> or <tt class="xref py py-class docutils literal"><span class="pre">Node</span></tt> objects</li>
+<li><strong>kwargs</strong> &#8211; a mapping of column + lookup to value, e.g. &#8220;age__gt=55&#8221;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a <a class="reference internal" href="#UpdateQuery" title="UpdateQuery"><tt class="xref py py-class docutils literal"><span class="pre">UpdateQuery</span></tt></a> instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference internal" href="#UpdateQuery.where" title="UpdateQuery.where"><tt class="xref py py-meth docutils literal"><span class="pre">where()</span></tt></a> calls are chainable</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="UpdateQuery.execute">
+<tt class="descname">execute</tt><big>(</big><big>)</big><a class="headerlink" href="#UpdateQuery.execute" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Number of rows updated</td>
+</tr>
+</tbody>
+</table>
+<p>Performs the query</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="deletequery">
+<h2>DeleteQuery<a class="headerlink" href="#deletequery" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="DeleteQuery">
+<em class="property">class </em><tt class="descname">DeleteQuery</tt><a class="headerlink" href="#DeleteQuery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes rows of the given model.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">It will <em>not</em> traverse foreign keys or ensure that constraints are obeyed, so use it with care.</p>
+</div>
+<dl class="method">
+<dt id="DeleteQuery.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>model</em><big>)</big><a class="headerlink" href="#DeleteQuery.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates a <tt class="docutils literal"><span class="pre">DeleteQuery</span></tt> instance for the given model:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">dq</span> <span class="o">=</span> <span class="n">DeleteQuery</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">dq</span><span class="o">.</span><span class="n">sql</span><span class="p">()</span>
+<span class="go">(&#39;DELETE FROM user WHERE active = ?&#39;, [0])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="DeleteQuery.where">
+<tt class="descname">where</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#DeleteQuery.where" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> &#8211; a list of <tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> or <tt class="xref py py-class docutils literal"><span class="pre">Node</span></tt> objects</li>
+<li><strong>kwargs</strong> &#8211; a mapping of column + lookup to value, e.g. &#8220;age__gt=55&#8221;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">a <a class="reference internal" href="#DeleteQuery" title="DeleteQuery"><tt class="xref py py-class docutils literal"><span class="pre">DeleteQuery</span></tt></a> instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference internal" href="#DeleteQuery.where" title="DeleteQuery.where"><tt class="xref py py-meth docutils literal"><span class="pre">where()</span></tt></a> calls are chainable</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="DeleteQuery.execute">
+<tt class="descname">execute</tt><big>(</big><big>)</big><a class="headerlink" href="#DeleteQuery.execute" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Number of rows deleted</td>
+</tr>
+</tbody>
+</table>
+<p>Performs the query</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="insertquery">
+<h2>InsertQuery<a class="headerlink" href="#insertquery" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="InsertQuery">
+<em class="property">class </em><tt class="descname">InsertQuery</tt><a class="headerlink" href="#InsertQuery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new row for the given model.</p>
+<dl class="method">
+<dt id="InsertQuery.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>model</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#InsertQuery.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates an <tt class="docutils literal"><span class="pre">InsertQuery</span></tt> instance for the given model where kwargs is a
+dictionary of field name to value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">iq</span> <span class="o">=</span> <span class="n">InsertQuery</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s">&#39;admin&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">iq</span><span class="o">.</span><span class="n">sql</span><span class="p">()</span>
+<span class="go">(&#39;INSERT INTO user (username, password, active) VALUES (?, ?, ?)&#39;, [&#39;admin&#39;, &#39;test&#39;, 1])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="InsertQuery.execute">
+<tt class="descname">execute</tt><big>(</big><big>)</big><a class="headerlink" href="#InsertQuery.execute" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">primary key of the new row</td>
+</tr>
+</tbody>
+</table>
+<p>Performs the query</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="rawquery">
+<h2>RawQuery<a class="headerlink" href="#rawquery" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="RawQuery">
+<em class="property">class </em><tt class="descname">RawQuery</tt><a class="headerlink" href="#RawQuery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows execution of an arbitrary <tt class="docutils literal"><span class="pre">SELECT</span></tt> query and returns instances
+of the model via a <tt class="xref py py-class docutils literal"><span class="pre">QueryResultsWrapper</span></tt>.</p>
+<dl class="method">
+<dt id="RawQuery.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>model</em>, <em>query</em>, <em>*params</em><big>)</big><a class="headerlink" href="#RawQuery.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates a <tt class="docutils literal"><span class="pre">RawQuery</span></tt> instance for the given model which, when executed,
+will run the given query with the given parameters and return model instances:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">rq</span> <span class="o">=</span> <span class="n">RawQuery</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="s">&#39;SELECT * FROM users WHERE username = ?&#39;</span><span class="p">,</span> <span class="s">&#39;admin&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">rq</span><span class="o">.</span><span class="n">execute</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">obj</span>
+<span class="go">&lt;User: admin&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="RawQuery.execute">
+<tt class="descname">execute</tt><big>(</big><big>)</big><a class="headerlink" href="#RawQuery.execute" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a <tt class="xref py py-class docutils literal"><span class="pre">QueryResultWrapper</span></tt> for iterating over the result set.  The results are instances of the given model.</td>
+</tr>
+</tbody>
+</table>
+<p>Performs the query</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Querying API</a><ul>
+<li><a class="reference internal" href="#constructing-queries">Constructing queries</a><ul>
+<li><a class="reference internal" href="#django-style-queries">Django-style queries</a></li>
+<li><a class="reference internal" href="#using-python-operators-to-query">Using python operators to query</a></li>
+<li><a class="reference internal" href="#comparing-the-three-methods-of-querying">Comparing the three methods of querying</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#where-clause">Where clause</a><ul>
+<li><a class="reference internal" href="#column-lookups">Column lookups</a></li>
+<li><a class="reference internal" href="#python-operator-overloads">Python operator overloads</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performing-advanced-queries">Performing advanced queries</a><ul>
+<li><a class="reference internal" href="#comparing-against-column-data">Comparing against column data</a></li>
+<li><a class="reference internal" href="#atomic-updates">Atomic updates</a></li>
+<li><a class="reference internal" href="#aggregating-records">Aggregating records</a></li>
+<li><a class="reference internal" href="#sql-functions-raw-expressions-and-the-r-object">SQL Functions, &#8220;Raw expressions&#8221; and the R() object</a></li>
+<li><a class="reference internal" href="#saving-queries-by-selecting-related-models">Saving Queries by Selecting Related Models</a></li>
+<li><a class="reference internal" href="#speeding-up-simple-select-queries">Speeding up simple select queries</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#query-evaluation">Query evaluation</a></li>
+<li><a class="reference internal" href="#queryresultwrapper">QueryResultWrapper</a></li>
+<li><a class="reference internal" href="#selectquery">SelectQuery</a></li>
+<li><a class="reference internal" href="#updatequery">UpdateQuery</a></li>
+<li><a class="reference internal" href="#deletequery">DeleteQuery</a></li>
+<li><a class="reference internal" href="#insertquery">InsertQuery</a></li>
+<li><a class="reference internal" href="#rawquery">RawQuery</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="fields.html"
+                        title="previous chapter">Fields</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="database.html"
+                        title="next chapter">Databases</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/peewee/querying.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="database.html" title="Databases"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="fields.html" title="Fields"
+             >previous</a> |</li>
+        <li><a href="../index.html">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, charles leifer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

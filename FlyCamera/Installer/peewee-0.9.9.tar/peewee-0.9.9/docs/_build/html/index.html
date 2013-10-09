@@ -1,0 +1,198 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>peewee &mdash; peewee 0.9.8 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.9.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="peewee 0.9.8 documentation" href="#" />
+    <link rel="next" title="Overview" href="peewee/overview.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="peewee/overview.html" title="Overview"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="peewee">
+<h1>peewee<a class="headerlink" href="#peewee" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li>a small orm</li>
+<li>written in python</li>
+<li>provides a lightweight querying interface over sql</li>
+<li>uses sql concepts when querying, like joins and where clauses</li>
+</ul>
+<p>For flask integration, including an admin interface and RESTful API, check
+out <a class="reference external" href="https://github.com/coleifer/flask-peewee/">flask-peewee</a>.</p>
+<div class="section" id="contents">
+<h2>Contents:<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="peewee/overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="peewee/overview.html#why">Why?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="peewee/installation.html">Installing peewee</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="peewee/installation.html#installing-with-git">Installing with git</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="peewee/cookbook.html">Peewee Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="peewee/cookbook.html#database-and-connection-recipes">Database and Connection Recipes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/cookbook.html#creating-reading-updating-and-deleting">Creating, Reading, Updating and Deleting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/cookbook.html#working-with-transactions">Working with transactions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/cookbook.html#introspecting-databases">Introspecting databases</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="peewee/example.html">Example app</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="peewee/example.html#running-the-example">Running the example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/example.html#diving-into-the-code">Diving into the code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="peewee/models.html">Model API (smells like django)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="peewee/models.html#creating-tables">Creating tables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/models.html#model-instances">Model instances</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/models.html#model-options">Model options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/models.html#model-methods">Model methods</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="peewee/fields.html">Fields</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="peewee/fields.html#field-types-table">Field types table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/fields.html#self-referential-foreign-keys">Self-referential Foreign Keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/fields.html#implementing-many-to-many">Implementing Many to Many</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/fields.html#non-integer-primary-keys">Non-integer Primary Keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/fields.html#field-class-api">Field class API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="peewee/querying.html">Querying API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="peewee/querying.html#constructing-queries">Constructing queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/querying.html#where-clause">Where clause</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/querying.html#performing-advanced-queries">Performing advanced queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/querying.html#query-evaluation">Query evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/querying.html#queryresultwrapper">QueryResultWrapper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/querying.html#selectquery">SelectQuery</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/querying.html#updatequery">UpdateQuery</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/querying.html#deletequery">DeleteQuery</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/querying.html#insertquery">InsertQuery</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/querying.html#rawquery">RawQuery</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="peewee/database.html">Databases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="peewee/database.html#writing-a-database-driver">Writing a database driver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/database.html#database-and-its-subclasses">Database and its subclasses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/database.html#baseadapter-and-its-subclasses">BaseAdapter and its subclasses</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="peewee/playhouse.html">Playhouse, a collection of addons</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="peewee/playhouse.html#apsw-an-advanced-sqlite-driver">apsw, an advanced sqlite driver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/playhouse.html#postgresql-extensions-hstore">Postgresql Extensions (hstore)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/playhouse.html#pwiz-a-model-generator">pwiz, a model generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/playhouse.html#signal-support">Signal support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/playhouse.html#sqlite-extensions">Sqlite Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="peewee/playhouse.html#swee-pea-syntactic-sugar-for-peewee">Swee&#8217;pea, syntactic sugar for peewee</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">peewee</a><ul>
+<li><a class="reference internal" href="#contents">Contents:</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="peewee/overview.html"
+                        title="next chapter">Overview</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="peewee/overview.html" title="Overview"
+             >next</a> |</li>
+        <li><a href="#">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, charles leifer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

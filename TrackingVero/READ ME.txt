@@ -1,0 +1,33 @@
+TRACKING SCRIPTS USED BY VERONICA - FEB2013
+
+%%% Singleframearenatest_CloseUp.m  %%%
+
+This script is used for dentifying the best bodyThreshold
+Output1-2: Plots binary image after thresholds for full fly and for fly without wings (flyBody)
+Output3: Shows the original frame image and superimposes Fly centroid, Body Centroid, Head position and Surrounding polygons delimiting the Fly.
+
+	%%% fastsmooth.m %%%             
+	This script is used in Singleframearenatest_CloseUp.m to find the smoothened version of the surrounding polygon delimiting the fly
+
+
+
+%%% Pipeline_forAlan.m  %%%
+
+Introduce here the filenames of the videos to analyse and the BodyThreshold to be applied in the tracking
+OUTPUTS: 
+- 'Totaltraking-filename.m': Cell structure with the centroids and areas of all the blobs found in each frame 
+- 'Centroids-filename.m': Matrix with [xposition yposition] with nans where the flyblob was not identified
+- Plot centroids over 1 frame of the movie.
+
+	%%% Tracking_forAlan.m %%%
+	This script is called by Pipeline_forAlan.m
+	Input: videofile
+	Output:cell structure with the centroids and areas of all the blobs found in each frame. Name: 'Totaltraking-filename.m'
+
+	%%% Centroids_Orientation_forAlan.m  %%%
+	This script runs over all the frames in the 'Totaltraking-filename.m' and selects the blob that is likely to be the fly when that given blob fits this constrain: MinAreaBody<AreaBlob<MaxAreaBody
+	Input: Centroids cell structure with centroids and areas for all the blobs found in each frame
+	Output1: 'Centroids-filename.m': matrix with [xposition yposition] with nans where the flyblob was not identified.
+	Output2: plot centroids over 1 frame of the movie.
+              
+	

@@ -1,0 +1,39 @@
+function moveMotors (s, Ma, Mb, delay)
+    global Ma_prev
+    global Mb_prev
+
+    try
+        fprintf(s, 'TARGET 0 %d\n', Ma);
+        pause(0.01);
+        if s.BytesAvailable > 0
+            data=fscanf(s);
+        end
+
+        fprintf(s, 'TARGET 1 %d\n', Mb);
+        %pause(0.01);
+        if s.BytesAvailable > 0
+            data=fscanf(s);
+        end
+
+        fprintf(s, 'LASER 5\n');
+        pause(0.01);
+        if s.BytesAvailable > 0
+            data=fscanf(s);
+        end
+    catch err
+        err
+    end
+    
+    
+    
+    if delay == true
+        %pause(20);
+        sec_max = 15;
+        M_max = max(abs(Ma-Ma_prev), abs(Mb-Mb_prev));
+        sec = (sec_max * M_max)/100 + 2; % +2 to be sure
+        pause(sec);
+    end
+    
+    Ma_prev = Ma;
+    Mb_prev = Mb;
+end

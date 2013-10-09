@@ -1,0 +1,186 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Overview &mdash; peewee 0.9.8 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="peewee 0.9.8 documentation" href="../index.html" />
+    <link rel="next" title="Installing peewee" href="installation.html" />
+    <link rel="prev" title="peewee" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installing peewee"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="peewee"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="overview">
+<span id="id1"></span><h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<p>peewee is a lightweight <a class="reference external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">ORM</a> written
+in python.</p>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># a simple query selecting a user</span>
+<span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;charles&#39;</span><span class="p">)</span>
+
+<span class="c"># get the staff and super users</span>
+<span class="n">editors</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">is_superuser</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+
+<span class="c"># get tweets by editors</span>
+<span class="n">Tweet</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">user__in</span><span class="o">=</span><span class="n">editors</span><span class="p">)</span>
+
+<span class="c"># how many active users are there?</span>
+<span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+
+<span class="c"># paginate the user table and show me page 3 (users 41-60)</span>
+<span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">((</span><span class="s">&#39;username&#39;</span><span class="p">,</span> <span class="s">&#39;asc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+
+<span class="c"># order users by number of tweets</span>
+<span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Tweet</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">((</span><span class="s">&#39;count&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">))</span>
+
+<span class="c"># another way of expressing the same</span>
+<span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">({</span>
+    <span class="n">User</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;*&#39;</span><span class="p">],</span>
+    <span class="n">Tweet</span><span class="p">:</span> <span class="p">[</span><span class="n">Count</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;count&#39;</span><span class="p">)]</span>
+<span class="p">})</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Tweet</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">((</span><span class="s">&#39;count&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">))</span>
+
+<span class="c"># do an atomic update</span>
+<span class="n">TweetCount</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">count</span><span class="o">=</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;count&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">charlie</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can use django-style syntax to create select queries:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># how many active users are there?</span>
+<span class="n">User</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+
+<span class="c"># get tweets by a specific user</span>
+<span class="n">Tweet</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user__username</span><span class="o">=</span><span class="s">&#39;charlie&#39;</span><span class="p">)</span>
+
+<span class="c"># get tweets by editors</span>
+<span class="n">Tweet</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Q</span><span class="p">(</span><span class="n">user__is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">user__is_superuser</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>You can use python operators to create select queries:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># how many active users are there?</span>
+<span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">active</span> <span class="o">==</span> <span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+
+<span class="c"># get me all users in their thirties</span>
+<span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">User</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">age</span> <span class="o">&lt;</span> <span class="mi">40</span><span class="p">))</span>
+
+<span class="c"># get me tweets from today by active users</span>
+<span class="n">Tweet</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">Tweet</span><span class="o">.</span><span class="n">pub_date</span> <span class="o">&gt;=</span> <span class="n">today</span><span class="p">)</span> <span class="o">&amp;</span>
+    <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">active</span> <span class="o">==</span> <span class="bp">True</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Check out <a class="reference internal" href="querying.html#query-compare"><em>the docs</em></a> for notes on the methods of querying.</p>
+<div class="section" id="why">
+<h2>Why?<a class="headerlink" href="#why" title="Permalink to this headline">¶</a></h2>
+<p>peewee began when I was working on a small app in flask and found myself writing
+lots of queries and wanting a very simple abstraction on top of the sql.  I had
+so much fun working on it that I kept adding features.  My goal has always been,
+though, to keep the implementation incredibly simple.  I&#8217;ve made a couple dives
+into django&#8217;s orm but have never come away with a deep understanding of its
+implementation.  peewee is small enough that its my hope anyone with an interest
+in orms will be able to understand the code without too much trouble.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Overview</a><ul>
+<li><a class="reference internal" href="#why">Why?</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">peewee</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="next chapter">Installing peewee</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/peewee/overview.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installing peewee"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="peewee"
+             >previous</a> |</li>
+        <li><a href="../index.html">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, charles leifer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

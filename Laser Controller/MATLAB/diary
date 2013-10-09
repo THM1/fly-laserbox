@@ -1,0 +1,19 @@
+	=> Starting connection with Arduino...
+		[connect]	=== START ===
+		[START]  	=> LACs started
+		[LASER 5]	=> Laser power: 5
+Error event occurred at 19:22:33 for video input object: RGB24_640x480-winvideo-1.
+Unable to allocate memory for an incoming image frame. Use <a href="matlab:imaqhelp imaqmem">IMAQMEM</a> to modify the frame memory limit.
+{??? Unable to allocate memory for an incoming image frame. Use <a href="matlab:imaqhelp imaqmem">IMAQMEM</a> to
+modify the frame memory limit.
+
+Error in ==> <a href="matlab: opentoline('X:\Alan Zucconi\Laser Controller\MATLAB\startMotors.m',41,0)">startMotors at 41</a>
+    pause (5);
+} 
+{??? Error using ==> <a href="matlab: opentoline('C:\Program Files\MATLAB\R2010b\toolbox\imaq\imaq\@imaqdevice\getsnapshot.m',65,0)">imaqdevice.getsnapshot at 65</a>
+GETSNAPSHOT interrupted with ^C (Control-C) before frame was available.
+} 
+
+
+
+=== STOP ===

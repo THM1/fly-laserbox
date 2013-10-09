@@ -1,0 +1,664 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Extras &mdash; peewee 0.9.8 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="peewee 0.9.8 documentation" href="../index.html" />
+    <link rel="prev" title="Databases" href="database.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="database.html" title="Databases"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="extras">
+<span id="cookbook"></span><h1>Extras<a class="headerlink" href="#extras" title="Permalink to this headline">¶</a></h1>
+<p>Peewee comes with numerous extras which I didn&#8217;t really feel like including in
+the main source module, but which might be interesting to implementers or fun
+to mess around with.</p>
+<div class="section" id="apsw-an-advanced-sqlite-driver">
+<h2>apsw, an advanced sqlite driver<a class="headerlink" href="#apsw-an-advanced-sqlite-driver" title="Permalink to this headline">¶</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">apsw_ext</span></tt> module contains a database class suitable for use with the
+<a class="reference external" href="http://code.google.com/p/apsw/">apsw</a> sqlite driver.  With apsw, it is possible
+to use some of the more advanced features of sqlite.  It also offers better performance
+than pysqlite and finer-grained control over query execution.  For more information
+on the differences between apsw and pysqlite, check <a class="reference external" href="http://apidoc.apsw.googlecode.com/hg/pysqlite.html">the apsw docs</a>.</p>
+<dl class="class">
+<dt id="APSWDatabase">
+<em class="property">class </em><tt class="descname">APSWDatabase</tt><big>(</big><em>database</em>, <em>**connect_kwargs</em><big>)</big><a class="headerlink" href="#APSWDatabase" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>database</strong> (<em>string</em>) &#8211; filename of sqlite database</li>
+<li><strong>connect_kwargs</strong> &#8211; keyword arguments passed to apsw when opening a connection</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="APSWDatabase.transaction">
+<tt class="descname">transaction</tt><big>(</big><span class="optional">[</span><em>lock_type='deferred'</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#APSWDatabase.transaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Functions just like the <a class="reference internal" href="database.html#Database.transaction" title="Database.transaction"><tt class="xref py py-meth docutils literal"><span class="pre">Database.transaction()</span></tt></a> context manager,
+but accepts an additional parameter specifying the type of lock to use.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>lock_type</strong> (<em>string</em>) &#8211; type of lock to use when opening a new transaction</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="APSWAdapter">
+<em class="property">class </em><tt class="descname">APSWAdapter</tt><big>(</big><em>timeout</em><big>)</big><a class="headerlink" href="#APSWAdapter" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>timeout</strong> (<em>int</em>) &#8211; sqlite busy timeout in seconds (<a class="reference external" href="http://apidoc.apsw.googlecode.com/hg/connection.html?highlight=busytimeout#apsw.Connection.setbusytimeout">docs</a>)</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="APSWAdapter.register_module">
+<tt class="descname">register_module</tt><big>(</big><em>mod_name</em>, <em>mod_inst</em><big>)</big><a class="headerlink" href="#APSWAdapter.register_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides a way of globally registering a module.  For more information,
+see the <a class="reference external" href="http://apidoc.apsw.googlecode.com/hg/vtable.html">documentation on virtual tables</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>mod_name</strong> (<em>string</em>) &#8211; name to use for module</li>
+<li><strong>mod_inst</strong> (<em>object</em>) &#8211; an object implementing the <a class="reference external" href="http://apidoc.apsw.googlecode.com/hg/vtable.html?highlight=virtual%20table#apsw.VTTable">Virtual Table</a> interface</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="APSWAdapter.unregister_module">
+<tt class="descname">unregister_module</tt><big>(</big><em>mod_name</em><big>)</big><a class="headerlink" href="#APSWAdapter.unregister_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unregister a module.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mod_name</strong> (<em>string</em>) &#8211; name to use for module</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="VirtualModel">
+<em class="property">class </em><tt class="descname">VirtualModel</tt><a class="headerlink" href="#VirtualModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>A model subclass suitable for creating virtual tables.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You must specify the name for the extension module you wish to use</p>
+</div>
+<dl class="attribute">
+<dt id="VirtualModel._extension_module">
+<tt class="descname">_extension_module</tt><a class="headerlink" href="#VirtualModel._extension_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the extension module to use with this virtual table</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="pwiz-a-model-generator">
+<h2>pwiz, a model generator<a class="headerlink" href="#pwiz-a-model-generator" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">pwiz</span></tt> is a little script that ships with peewee and is capable of introspecting
+an existing database and generating model code suitable for interacting with the
+underlying data.  If you have a database already, pwiz can give you a nice boost
+by generating skeleton code with correct column affinities and foreign keys.</p>
+<p>If you install peewee using <tt class="docutils literal"><span class="pre">setup.py</span> <span class="pre">install</span></tt>, pwiz will be installed as a &#8220;script&#8221;
+and you can just run:</p>
+<div class="highlight-console"><div class="highlight"><pre><span class="go">pwiz.py -e postgresql -u postgres my_postgres_db &gt; my_models.py</span>
+</pre></div>
+</div>
+<p>This will print a bunch of models to standard output.  So you can do this:</p>
+<div class="highlight-console"><div class="highlight"><pre><span class="go">pwiz.py -e postgresql my_postgres_db &gt; mymodels.py</span>
+<span class="go">python # &lt;-- fire up an interactive shell</span>
+</pre></div>
+</div>
+<div class="highlight-pycon"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">mymodels</span> <span class="kn">import</span> <span class="n">Blog</span><span class="p">,</span> <span class="n">Entry</span><span class="p">,</span> <span class="n">Tag</span><span class="p">,</span> <span class="n">Whatever</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="p">[</span><span class="n">blog</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">blog</span> <span class="ow">in</span> <span class="n">Blog</span><span class="o">.</span><span class="n">select</span><span class="p">()]</span>
+</pre></div>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="8%" />
+<col width="33%" />
+<col width="59%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Option</th>
+<th class="head">Meaning</th>
+<th class="head">Example</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>-h</td>
+<td>show help</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>-e</td>
+<td>database backend</td>
+<td>-e mysql</td>
+</tr>
+<tr class="row-even"><td>-H</td>
+<td>host to connect to</td>
+<td>-H remote.db.server</td>
+</tr>
+<tr class="row-odd"><td>-p</td>
+<td>port to connect on</td>
+<td>-p 9001</td>
+</tr>
+<tr class="row-even"><td>-u</td>
+<td>database user</td>
+<td>-u postgres</td>
+</tr>
+<tr class="row-odd"><td>-P</td>
+<td>database password</td>
+<td>-P secret</td>
+</tr>
+<tr class="row-even"><td>-s</td>
+<td>postgres schema</td>
+<td>-s public</td>
+</tr>
+</tbody>
+</table>
+<p>The following are valid parameters for the engine:</p>
+<ul class="simple">
+<li>sqlite</li>
+<li>mysql</li>
+<li>postgresql</li>
+</ul>
+</div>
+<div class="section" id="signal-support">
+<h2>Signal support<a class="headerlink" href="#signal-support" title="Permalink to this headline">¶</a></h2>
+<p>Models with hooks for signals (a-la django) are provided in <tt class="docutils literal"><span class="pre">extras.signals</span></tt>.
+To use the signals, you will need all of your project&#8217;s models to be a subclass
+of <tt class="docutils literal"><span class="pre">extras.signals.Model</span></tt>, which overrides the necessary methods to provide
+support for the various signals.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">extras.signals</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">connect</span><span class="p">,</span> <span class="n">post_save</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+
+<span class="nd">@connect</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">MyModel</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">on_save_handler</span><span class="p">(</span><span class="n">model_class</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">created</span><span class="p">):</span>
+    <span class="n">put_data_in_cache</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The following signals are provided:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">pre_save</span></tt></dt>
+<dd>Called immediately before an object is saved to the database.  Provides an
+additional keyword argument <tt class="docutils literal"><span class="pre">created</span></tt>, indicating whether the model is being
+saved for the first time or updated.</dd>
+<dt><tt class="docutils literal"><span class="pre">post_save</span></tt></dt>
+<dd>Called immediately after an object is saved to the database.  Provides an
+additional keyword argument <tt class="docutils literal"><span class="pre">created</span></tt>, indicating whether the model is being
+saved for the first time or updated.</dd>
+<dt><tt class="docutils literal"><span class="pre">pre_delete</span></tt></dt>
+<dd>Called immediately before an object is deleted from the database when <a class="reference internal" href="models.html#Model.delete_instance" title="Model.delete_instance"><tt class="xref py py-meth docutils literal"><span class="pre">Model.delete_instance()</span></tt></a>
+is used.</dd>
+<dt><tt class="docutils literal"><span class="pre">post_delete</span></tt></dt>
+<dd>Called immediately after an object is deleted from the database when <a class="reference internal" href="models.html#Model.delete_instance" title="Model.delete_instance"><tt class="xref py py-meth docutils literal"><span class="pre">Model.delete_instance()</span></tt></a>
+is used.</dd>
+<dt><tt class="docutils literal"><span class="pre">pre_init</span></tt></dt>
+<dd>Called when a model class is first instantiated</dd>
+<dt><tt class="docutils literal"><span class="pre">post_init</span></tt></dt>
+<dd>Called after a model class has been instantiated and the fields have been populated,
+for example when being selected as part of a database query.</dd>
+</dl>
+<div class="section" id="connecting-handlers">
+<h3>Connecting handlers<a class="headerlink" href="#connecting-handlers" title="Permalink to this headline">¶</a></h3>
+<p>Whenever a signal is dispatched, it will call any handlers that have been registered.
+This allows totally separate code to respond to events like model save and delete.</p>
+<p>The <a class="reference internal" href="#Signal" title="Signal"><tt class="xref py py-class docutils literal"><span class="pre">Signal</span></tt></a> class provides a <a class="reference internal" href="#Signal.connect" title="Signal.connect"><tt class="xref py py-meth docutils literal"><span class="pre">connect()</span></tt></a> method, which takes
+a callback function and two optional parameters for &#8220;sender&#8221; and &#8220;name&#8221;.  If specified,
+the &#8220;sender&#8221; parameter should be a single model class and allows your callback to only
+receive signals from that one model class.  The &#8220;name&#8221; parameter is used as a convenient alias
+in the event you wish to unregister your signal handler.</p>
+<p>Example usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">extras.signals</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">def</span> <span class="nf">post_save_handler</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">created</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> was just saved&#39;</span> <span class="o">%</span> <span class="n">instance</span>
+
+<span class="c"># our handler will only be called when we save instances of SomeModel</span>
+<span class="n">post_save</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">post_save_handler</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">SomeModel</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>All signal handlers accept as their first two arguments <tt class="docutils literal"><span class="pre">sender</span></tt> and <tt class="docutils literal"><span class="pre">instance</span></tt>,
+where <tt class="docutils literal"><span class="pre">sender</span></tt> is the model class and <tt class="docutils literal"><span class="pre">instance</span></tt> is the actual model being acted
+upon.</p>
+<p>If you&#8217;d like, you can also use a decorator to connect signal handlers.  This is
+functionally equivalent to the above example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@connect</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">SomeModel</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">post_save_handler</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">created</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> was just saved&#39;</span> <span class="o">%</span> <span class="n">instance</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="signal-api">
+<h3>Signal API<a class="headerlink" href="#signal-api" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="Signal">
+<em class="property">class </em><tt class="descname">Signal</tt><a class="headerlink" href="#Signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores a list of receivers (callbacks) and calls them when the &#8220;send&#8221; method is invoked.</p>
+<dl class="method">
+<dt id="Signal.connect">
+<tt class="descname">connect</tt><big>(</big><em>receiver</em><span class="optional">[</span>, <em>sender=None</em><span class="optional">[</span>, <em>name=None</em><span class="optional">]</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#Signal.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add the receiver to the internal list of receivers, which will be called
+whenever the signal is sent.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>receiver</strong> (<em>callable</em>) &#8211; a callable that takes at least two parameters,
+a &#8220;sender&#8221;, which is the Model subclass that triggered the signal, and
+an &#8220;instance&#8221;, which is the actual model instance.</li>
+<li><strong>sender</strong> (<a class="reference internal" href="models.html#Model" title="Model"><em>Model</em></a>) &#8211; if specified, only instances of this model class will
+trigger the receiver callback.</li>
+<li><strong>name</strong> (<em>string</em>) &#8211; a short alias</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">extras.signals</span> <span class="kn">import</span> <span class="n">post_save</span>
+<span class="kn">from</span> <span class="nn">project.handlers</span> <span class="kn">import</span> <span class="n">cache_buster</span>
+
+<span class="n">post_save</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">cache_buster</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;project.cache_buster&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Signal.disconnect">
+<tt class="descname">disconnect</tt><big>(</big><span class="optional">[</span><em>receiver=None</em><span class="optional">[</span>, <em>name=None</em><span class="optional">]</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#Signal.disconnect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnect the given receiver (or the receiver with the given name alias)
+so that it no longer is called.  Either the receiver or the name must be
+provided.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>receiver</strong> (<em>callable</em>) &#8211; the callback to disconnect</li>
+<li><strong>name</strong> (<em>string</em>) &#8211; a short alias</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">post_save</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;project.cache_buster&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Signal.send">
+<tt class="descname">send</tt><big>(</big><em>instance</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#Signal.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates over the receivers and will call them in the order in which
+they were connected.  If the receiver specified a sender, it will only
+be called if the instance is an instance of the sender.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>instance</strong> &#8211; a model instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="connect">
+<tt class="descname">connect</tt><big>(</big><em>signal</em><span class="optional">[</span>, <em>sender=None</em><span class="optional">[</span>, <em>name=None</em><span class="optional">]</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function decorator that is an alias for a signal&#8217;s connect method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">extras.signals</span> <span class="kn">import</span> <span class="n">connect</span><span class="p">,</span> <span class="n">post_save</span>
+
+<span class="nd">@connect</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;project.cache_buster&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">cache_bust_handler</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c"># bust the cache for this instance</span>
+    <span class="n">cache</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">cache_key_for</span><span class="p">(</span><span class="n">instance</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="sqlite-extensions">
+<h2>Sqlite Extensions<a class="headerlink" href="#sqlite-extensions" title="Permalink to this headline">¶</a></h2>
+<p>The sqlite extensions module provides a number of &#8220;sqlite-only&#8221; functions, including:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#full-text-search"><em>Full-text search support</em></a></li>
+<li><a class="reference internal" href="#granular-transactions"><em>Finer-grained transaction controls</em></a></li>
+<li><a class="reference internal" href="#custom-shit"><em>Custom aggregation functions, collations and user-defined functions</em></a></li>
+</ul>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">In order to start using the features described below, you will need to use the
+extension <tt class="xref py py-class docutils literal"><span class="pre">SqliteExtDatabase</span></tt> class instead of <a class="reference internal" href="database.html#SqliteDatabase" title="SqliteDatabase"><tt class="xref py py-class docutils literal"><span class="pre">SqliteDatabase</span></tt></a>.</p>
+</div>
+<p>The code below will assume you are using the following database and base model:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">extras.sqlite_ext</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">ext_db</span> <span class="o">=</span> <span class="n">SqliteExtDatabase</span><span class="p">(</span><span class="s">&#39;tmp.db&#39;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">BaseExtModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">ext_db</span>
+</pre></div>
+</div>
+<div class="section" id="full-text-search">
+<span id="id1"></span><h3>Full-text search<a class="headerlink" href="#full-text-search" title="Permalink to this headline">¶</a></h3>
+<p>Sqlite ships on most distributions with a full-text search (FTS) extension module.  This
+can be used to expose search on your peewee models with very little work.  A complete
+overview of sqlite&#8217;s FTS is beyond the scope of this section, so please <a class="reference external" href="http://www.sqlite.org/fts3.html">read their documentation</a> for
+the details.</p>
+<p>To use FTS with your peewee models, you must subclass the <tt class="docutils literal"><span class="pre">extras.sqlite_ext.FTSModel</span></tt>.
+You can store data directly in this model or you can create a separate model that
+references an existing model.  Since virtual tables do not support column indexes, this decision
+will depend on how you intend to query the data stored in the full-text index.</p>
+<p>Here is a simple example, showing the use of a separate model for storage (note
+that we &#8220;mix-in&#8221; the <tt class="xref py py-class docutils literal"><span class="pre">FTSModel</span></tt>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">BaseExtModel</span><span class="p">):</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">TextField</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">FTSPost</span><span class="p">(</span><span class="n">Post</span><span class="p">,</span> <span class="n">FTSModel</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>When you create the table, you can specify a number of options for the full-text
+module, including a &#8220;source&#8221; table and a tokenizer:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Post</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span>
+<span class="n">FTSPost</span><span class="o">.</span><span class="n">create_table</span><span class="p">(</span><span class="n">content_model</span><span class="o">=</span><span class="n">Post</span><span class="p">,</span> <span class="n">tokenize</span><span class="o">=</span><span class="s">&#39;porter&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The above code instructs sqlite to create a virtual table storing our posts that
+will be suitable for FTS.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">bulk_import_some_posts</span><span class="p">()</span>
+
+<span class="c"># rebuild the search index -- this will load up the contents of the Post table</span>
+<span class="c"># and make it searchable via the FTSPost</span>
+<span class="n">FTSPost</span><span class="o">.</span><span class="n">rebuild</span><span class="p">()</span>
+
+<span class="c"># you can add/update/delete items from FTSPost just like a normal model</span>
+<span class="n">FTSPost</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="s">&#39;this will be searchable as well&#39;</span><span class="p">)</span>
+
+<span class="c"># perform a search</span>
+<span class="n">FTSPost</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">message__match</span><span class="o">=</span><span class="s">&#39;search phrase&#39;</span><span class="p">)</span>
+
+<span class="c"># search supports some advanced queries http://www.sqlite.org/fts3.html#section_3_1</span>
+<span class="n">FTSPost</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">message__match</span><span class="o">=</span><span class="s">&#39;cats NOT dogs&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>There is also support for ordering search results by rank.  The implementation is
+based on the <a class="reference external" href="https://gist.github.com/6c94317878b12ef172ab">C implementation</a> found
+at the bottom of the FTS docs:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">FTSPost</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s">&#39;*&#39;</span><span class="p">,</span> <span class="n">Rank</span><span class="p">(</span><span class="s">&#39;msg_rank&#39;</span><span class="p">)])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">message__match</span><span class="o">=</span><span class="s">&#39;python&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">((</span><span class="s">&#39;msg_rank&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="granular-transactions">
+<span id="id2"></span><h3>Granular Transactions<a class="headerlink" href="#granular-transactions" title="Permalink to this headline">¶</a></h3>
+<p>Sqlite uses three different types of locks to control access during transactions.
+Details on the three types can be found <a class="reference external" href="http://www.sqlite.org/lang_transaction.html">in the docs</a>,
+but here is a quick overview:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">deferred</span></tt></dt>
+<dd>locks are not acquired until the last moment.  multiple processes can continue
+to read the database.</dd>
+<dt><tt class="docutils literal"><span class="pre">immediate</span></tt></dt>
+<dd>lock is acquired and no further writes are possible until lock is released, but
+other processes can continue to read.  Additionally, no other immediate or
+exclusive locks can be acquired.</dd>
+<dt><tt class="docutils literal"><span class="pre">exclusive</span></tt></dt>
+<dd>lock is acquired and no further reads or writes are possible until lock is released</dd>
+</dl>
+<p>These various types of transactions can be opened using the special context-manager:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">ext_db</span><span class="o">.</span><span class="n">granular_transaction</span><span class="p">(</span><span class="s">&#39;exclusive&#39;</span><span class="p">):</span>
+    <span class="c"># no other connections can read or write to the database now</span>
+    <span class="n">execute_some_queries</span><span class="p">()</span>
+
+<span class="c"># safe for other processes to read and write again</span>
+<span class="n">do_some_other_stuff</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="custom-aggregators-collations-and-user-defined-functions">
+<span id="custom-shit"></span><h3>Custom aggregators, collations and user-defined functions<a class="headerlink" href="#custom-aggregators-collations-and-user-defined-functions" title="Permalink to this headline">¶</a></h3>
+<p>Sqlite allows you to specify custom functions that can stand-in as aggregators,
+collations or functions, and then be executed as part of your queries.  If you
+read the notes on the full-text search extension, the &#8220;sort by rank&#8221; is implemented
+as a user-defined function.</p>
+<p>Python&#8217;s <a class="reference external" href="http://docs.python.org/library/sqlite3.html#module-sqlite3">sqlite documentation</a> gives
+a good overview of how these types of functions can be used.</p>
+<ul>
+<li><p class="first"><a class="reference external" href="http://docs.python.org/library/sqlite3.html#sqlite3.Connection.create_aggregate">custom aggregates</a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">WeightedAverage</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_weight</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_ct</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">wt</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">wt</span> <span class="o">=</span> <span class="n">wt</span> <span class="ow">or</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_weight</span> <span class="o">+=</span> <span class="n">wt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_ct</span> <span class="o">+=</span> <span class="n">wt</span> <span class="o">*</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_weight</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_ct</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_weight</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+<span class="n">ext_db</span><span class="o">.</span><span class="n">adapter</span><span class="o">.</span><span class="n">register_aggregate</span><span class="p">(</span><span class="n">WeightedAverage</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;weighted_avg&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><a class="reference external" href="http://docs.python.org/library/sqlite3.html#sqlite3.Connection.create_collation">custom collations</a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">collate_reverse</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span>
+    <span class="k">return</span> <span class="o">-</span><span class="nb">cmp</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">)</span>
+
+<span class="n">ext_db</span><span class="o">.</span><span class="n">adapter</span><span class="o">.</span><span class="n">register_collation</span><span class="p">(</span><span class="n">collate_reverse</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><a class="reference external" href="http://docs.python.org/library/sqlite3.html#sqlite3.Connection.create_function">custom functions</a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">sha1</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+<span class="n">ext_db</span><span class="o">.</span><span class="n">adapter</span><span class="o">.</span><span class="n">register_function</span><span class="p">(</span><span class="n">sha1</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="swee-pea-syntactic-sugar-for-peewee">
+<h2>Swee&#8217;pea, syntactic sugar for peewee<a class="headerlink" href="#swee-pea-syntactic-sugar-for-peewee" title="Permalink to this headline">¶</a></h2>
+<p>Calling it syntactic sugar is a bit of a stretch.  I wrote this stuff for fun after
+learning about <a class="reference external" href="http://en.wikipedia.org/wiki/Relational_algebra">ISBL</a> from a coworker.
+The <a class="reference external" href="http://charlesleifer.com/blog/building-a-simple-query-dsl-with-peewee-orm/">blog post can be found here</a>.</p>
+<p>At any rate, ISBL (Information Systems Base Language) is an old domain-specific
+language for querying relational data, developed by IBM in the 60&#8217;s.  Here are some
+example SQL and ISBL queries:</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="c1">-- query the database for all active users</span>
+<span class="k">SELECT</span> <span class="n">id</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">active</span> <span class="k">FROM</span> <span class="n">users</span> <span class="k">WHERE</span> <span class="n">active</span> <span class="o">=</span> <span class="k">True</span>
+
+<span class="c1">-- query for tweets and the username of the sender</span>
+<span class="k">SELECT</span> <span class="n">t</span><span class="p">.</span><span class="n">id</span><span class="p">,</span> <span class="n">t</span><span class="p">.</span><span class="n">message</span><span class="p">,</span> <span class="n">u</span><span class="p">.</span><span class="n">username</span>
+<span class="k">FROM</span> <span class="n">tweets</span> <span class="k">AS</span> <span class="n">t</span>
+<span class="k">INNER</span> <span class="k">JOIN</span> <span class="n">users</span> <span class="k">AS</span> <span class="n">u</span>
+    <span class="k">ON</span> <span class="n">t</span><span class="p">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">u</span><span class="p">.</span><span class="n">id</span>
+<span class="k">WHERE</span> <span class="n">u</span><span class="p">.</span><span class="n">active</span> <span class="o">=</span> <span class="k">True</span>
+</pre></div>
+</div>
+<div class="highlight-sql"><div class="highlight"><pre><span class="c1">-- tables appear first -- the colon indicates a restriction (our where clause)</span>
+<span class="c1">-- and after the modulo is the &quot;projection&quot;, or columns we want to select</span>
+<span class="n">users</span> <span class="p">:</span> <span class="n">active</span> <span class="o">=</span> <span class="k">True</span> <span class="o">%</span> <span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+
+<span class="p">(</span><span class="n">tweets</span> <span class="o">*</span> <span class="n">users</span><span class="p">)</span> <span class="p">:</span> <span class="k">user</span><span class="p">.</span><span class="n">active</span> <span class="o">=</span> <span class="k">True</span> <span class="o">%</span> <span class="p">(</span><span class="n">tweet</span><span class="p">.</span><span class="n">id</span><span class="p">,</span> <span class="n">tweet</span><span class="p">.</span><span class="n">message</span><span class="p">,</span> <span class="k">user</span><span class="p">.</span><span class="n">username</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Pretty cool.  In the above examples:</p>
+<ul class="simple">
+<li>multiplication signifies a join, the tables to query (FROM)</li>
+<li>a colon signifies a restriction, the columns to filter (WHERE)</li>
+<li>modulo signifies a projection, the columns to return (SELECT)</li>
+</ul>
+<p>I hacked up a small implementation on top of peewee.  Since peewee does not support
+the &#8221;:&#8221; (colon) character as an infix operator, I used the &#8220;power&#8221; operator to signify
+a restriction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># active users</span>
+<span class="n">User</span> <span class="o">**</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">active</span> <span class="o">==</span> <span class="bp">True</span><span class="p">)</span>
+
+<span class="c"># tweets with the username of sender</span>
+<span class="p">(</span><span class="n">Tweet</span> <span class="o">*</span> <span class="n">User</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">active</span> <span class="o">==</span> <span class="bp">True</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">Tweet</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">Tweet</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">User</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To try out swee&#8217;pea, simply replace <tt class="docutils literal"><span class="pre">from</span> <span class="pre">peewee</span> <span class="pre">import</span> <span class="pre">*</span></tt> with <tt class="docutils literal"><span class="pre">from</span> <span class="pre">extras.sweepea</span> <span class="pre">import</span> <span class="pre">*</span></tt>
+and start writing wacky queries:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">extras.sweepea</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+    <span class="n">active</span> <span class="o">=</span> <span class="n">BooleanField</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">Tweet</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">ForeignKeyField</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+
+<span class="c"># have fun!</span>
+<span class="p">(</span><span class="n">User</span> <span class="o">*</span> <span class="n">Tweet</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">active</span> <span class="o">==</span> <span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Extras</a><ul>
+<li><a class="reference internal" href="#apsw-an-advanced-sqlite-driver">apsw, an advanced sqlite driver</a></li>
+<li><a class="reference internal" href="#pwiz-a-model-generator">pwiz, a model generator</a></li>
+<li><a class="reference internal" href="#signal-support">Signal support</a><ul>
+<li><a class="reference internal" href="#connecting-handlers">Connecting handlers</a></li>
+<li><a class="reference internal" href="#signal-api">Signal API</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sqlite-extensions">Sqlite Extensions</a><ul>
+<li><a class="reference internal" href="#full-text-search">Full-text search</a></li>
+<li><a class="reference internal" href="#granular-transactions">Granular Transactions</a></li>
+<li><a class="reference internal" href="#custom-aggregators-collations-and-user-defined-functions">Custom aggregators, collations and user-defined functions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#swee-pea-syntactic-sugar-for-peewee">Swee&#8217;pea, syntactic sugar for peewee</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="database.html"
+                        title="previous chapter">Databases</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/peewee/extras.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="database.html" title="Databases"
+             >previous</a> |</li>
+        <li><a href="../index.html">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, charles leifer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

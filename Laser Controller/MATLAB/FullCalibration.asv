@@ -1,0 +1,1086 @@
+%% CAMERA INITIALISATION =================================================
+% Copyright (c) 2010, A. Bhargav Anand
+% http://www.mathworks.co.uk/matlabcentral/fileexchange/28757-tracking-red-color-objects-using-matlab
+close all;
+%clear all;
+a = imaqhwinfo;
+[camera_name, camera_id, format] = getCameraInfo(a);
+
+% Capture the video frames using the videoinput function
+% You have to replace the resolution & your installed adaptor name.
+%vid = videoinput(camera_name, camera_id, format);
+vid = videoinput(camera_name, camera_id, 'RGB24_640x480');
+
+% Set the properties of the video object
+set(vid, 'FramesPerTrigger', Inf);
+set(vid, 'ReturnedColorspace', 'rgb')
+vid.FrameGrabInterval = 5;
+% 
+% %start the video aquisition here
+% start(vid)
+% 
+%     % Set a loop that stop after 100 frames of aquisition
+%     while(vid.FramesAcquired<=200000)
+% 
+%         % Get the snapshot of the current frame
+%         data = getsnapshot(vid);
+% 
+%         %[xCalib(1), yCalib(1), laserSights, props] = util_findlaser(data);
+%         [xCalib(1), yCalib(1), boundingBox, area] = util_findlaser(data);
+% 
+%         % Display the image
+%         %imshow(data)
+% 
+%         %hold on
+%         util_plotpos(data, xCalib(1), yCalib(1), boundingBox);
+%         %hold off;
+%         
+%         flushdata(vid);
+% 
+%     end
+% 
+%     % Stop the video aquisition.
+%     stop(vid);
+%     % Flush all the image data stored in the memory buffer.
+%     flushdata(vid);
+
+
+% Serial port --------------------
+global Ma_prev;
+global Mb_prev;
+port = 'COM6';
+%s = startMotors(port);
+% s = serial('COM4');
+% s.BaudRate=57600;
+% fopen(s);
+% 
+% pause(5);
+% data=fscanf(s)
+% 
+% fprintf(s, 'START\n');
+% data=fscanf(s)
+% 
+% pause(15);
+% 
+% fprintf(s, 'LASER 5\n');
+% data=fscanf(s)
+% 
+% global Ma_prev;
+% global Mb_prev;
+% Ma_prev = 50;
+% Mb_prev = 50;
+
+% Date time
+datetimeFormat = 'yyyy-mm-dd, HH.MM';
+autosave = true;
+
+if autosave == true
+    fileDate = datestr(now, datetimeFormat);
+    diary(   strcat('diary ', ' (', fileDate, ').txt')    );
+    %saveWorkspace('FullCalibration');
+end
+
+%% === CAMERA TILT CALIBRATION ===========================================
+%   Maps how points in the camera space (Lx, Ly in pixels) are mapped into
+%   the workspace (Wx, Wy, in centimeters).
+%   At least for reference points are required for this step. These are
+%   points for which it is known the exact position in the work space and
+%   how to reach them (Ma, Ma in percent).
+%   The easiest way of doing this is to more the robotic arm in some
+%   initial configurations (Ma, Mb in percent) and measuring exactly where
+%   the laser is hitting the workspace (Wx, Wy in centimeters).
+
+disp('=== CAMERA TILT CALIBRATION ===');
+
+% Starts the motors
+s = startMotors(port);
+
+% Camera tilt calibration data
+% The first four columns are inputs.
+% The last two are filled in the cycle below, so that all the data is
+% contained in a single data structure.
+%     Ma[%] Mb[%] | Wx[mm] Wy[mm] | Lx[px] Ly[px]
+t = 5;
+tiltCalibration = ...
+    [   0+t,    0+t,    309,   345,     NaN,   NaN;   ...
+      100-t,    0+t,    140,   342,     NaN,   NaN;   ...
+      100-t,  100-t,    149,   197,     NaN,   NaN;   ...
+        0+t,  100-t,    305,   189,     NaN,   NaN;   ...
+      ...
+        50,   100-t,    229,   198,     NaN,   NaN;   ...
+        50,     0+t,    221,   342,     NaN,   NaN;   ...
+        50,    50,      228,   269,     NaN,   NaN;   ...
+         0+t,  50,      304,   264,     NaN,   NaN;   ...
+       100-t,  50,      153,   269,     NaN,   NaN    ...
+    ];
+
+%     [   0,    0,    322,   358,     NaN,   NaN;   ...
+%       100,    0,    132,   349,     NaN,   NaN;   ...
+%       100,  100,    142,   191,     NaN,   NaN;   ...
+%         0,  100,    316,   181,     NaN,   NaN;   ...
+%       ...
+%         50, 100,    227,   193,     NaN,   NaN;   ...
+%         50,   0,    219,   349,     NaN,   NaN;   ...
+%         50,   50,   226,   269,     NaN,   NaN;   ...
+%          0,   50,   315,   264,     NaN,   NaN;   ...
+%        100,   50,   143,   269,     NaN,   NaN    ...
+%     ];
+
+
+%    [   0,    0,    316,   356,     NaN,   NaN;   ...
+%       100,    0,    129,   348,     NaN,   NaN;   ...
+%       100,  100,    141,   193,     NaN,   NaN;   ...
+%         0,  100,    315,   184,     NaN,   NaN;   ...
+%       ...
+%         50, 100,    227,   193,     NaN,   NaN;   ...
+%         50,   0,    219,   349,     NaN,   NaN;   ...
+%         50,   50,   226,   269,     NaN,   NaN;   ...
+%          0,   50,   315,   264,     NaN,   NaN;   ...
+%        100,   50,   143,   269,     NaN,   NaN    ...
+%     ];
+
+
+%     [   0,    0,    264,   275,     NaN,   NaN;   ...
+%       100,    0,    157,   273,     NaN,   NaN;   ...
+%       100,  100,    161,   190,     NaN,   NaN;   ...
+%         0,  100,    254,   188,     NaN,   NaN    ...
+%     ];
+
+% Loops over all the points ---------------------------------------------
+for i = 1:size(tiltCalibration,1)
+    % Moves the motors and wait
+    Ma = tiltCalibration(i, 1);
+    Mb = tiltCalibration(i, 2);
+    moveMotors(s, Ma, Mb, true);
+    
+    % Gets the current laser position
+    frame = getsnapshot(vid);
+    [Lx, Ly, boundingBox] = util_findlaser(frame);
+    if isnan(Lx) || isnan(Ly)
+        continue
+    end
+    tiltCalibration(i, 5) = Lx;
+    tiltCalibration(i, 6) = Ly;
+    
+    % Update the screen
+    util_plotpos(frame, Lx, Ly, boundingBox);
+    hold on;
+    %plot(tiltCalibration(1:i, 5), tiltCalibration(1:i, 6), 'x');
+    plot(tiltCalibration(1:i, 5), tiltCalibration(1:i, 6));
+    hold off;
+    
+    fprintf('\tPoint: %i of %i,\tM: [%6.2f %6.2f][%%]\tL: [%6.2f %6.2f][px]\n', i, size(tiltCalibration,1), Ma, Mb, Lx, Ly);
+    
+    flushdata(vid);
+end
+
+% Stopts the motors
+stopMotors(s);
+
+% Calculates the tilt correction matrix
+TiltCorrection = cp2tform(tiltCalibration(:, 5:6), tiltCalibration(:, 3:4), 'projective');
+
+
+% Generates some points that, once plotted, should reproduce a 1x1 cm grid
+% in the workspace.
+% gridPoints = zeros(0, 2);
+% for x = 120:10:310
+%     for y = 180:10:350
+%         gridPoints =          ...
+%             [   gridPoints;   ...
+%                 x,  y         ...
+%             ];
+%     end
+% end
+% gridSpace = tforminv(TiltCorrection, gridPoints);
+
+
+
+
+% xGridPoints = 120:10:310;
+% yGridPoints = 180:10:350;
+% 
+% xGridSpace_temp = tforminv(TiltCorrection, [xGridPoints', zeros(length(xGridPoints),1)]);
+% yGridSpace_temp = tforminv(TiltCorrection, [yGridPoints', zeros(length(yGridPoints),1)]);
+% 
+% xGridSpace = xGridSpace_temp(:,1);
+% yGridSpace = yGridSpace_temp(:,1);
+
+xRange = 120:10:310;
+yRange = 180:10:350;
+
+minX = min(xRange);
+maxX = max(xRange);
+
+minY = min(yRange);
+maxY = max(yRange);
+
+% Vertical -----------------------------------
+xGridPoints = zeros(0, 4);
+    % xStart, yStart, xEnd, yEnd
+for x = 120:10:310
+    xGridPoints =                       ...
+        [   xGridPoints;                ...
+            x,  minY,   x, maxY         ...
+        ];
+end
+xGridSpace_left  = tforminv(TiltCorrection, xGridPoints(:, 1:2));
+xGridSpace_right = tforminv(TiltCorrection, xGridPoints(:, 3:4));
+xGridSpace       = [xGridSpace_left, xGridSpace_right ];
+
+% Horizontal -----------------------------------
+yGridPoints = zeros(0, 4);
+    % xStart, yStart, xEnd, yEnd
+for y = 180:10:350
+    yGridPoints =                       ...
+        [   yGridPoints;                ...
+            minX,  y,   maxX, y         ...
+        ];
+end
+yGridSpace_left  = tforminv(TiltCorrection, yGridPoints(:, 1:2));
+yGridSpace_right = tforminv(TiltCorrection, yGridPoints(:, 3:4));
+yGridSpace       = [yGridSpace_left, yGridSpace_right ];
+
+gridSpace = [xGridSpace;yGridSpace];
+
+% Clear up memory
+clear xRange
+clear yRange
+
+clear xGridPoints
+clear yGridPoints
+
+clear xGridSpace_left
+clear yGridSpace_left
+
+clear xGridSpace
+clear yGridSpace
+
+
+hold on;
+drawgrid(gridSpace);
+hold off;
+
+
+% Max and min of the working space
+%Wx_min = tformfwd(TiltCorrection, [0, 0]);
+%Wx_max = tformfwd(TiltCorrection, [Lx, Ly]);
+
+
+%% === INTERACTIVE CAMERA TILT CALIBRATION ===========================================
+%   Maps how points in the camera space (Lx, Ly in pixels) are mapped into
+%   the workspace (Wx, Wy, in centimeters).
+%   At least for reference points are required for this step. These are
+%   points for which it is known the exact position in the work space and
+%   how to reach them (Ma, Ma in percent).
+%   The easiest way of doing this is to more the robotic arm in some
+%   initial configurations (Ma, Mb in percent) and measuring exactly where
+%   the laser is hitting the workspace (Wx, Wy in centimeters).
+
+disp('=== INTERACTIVE CAMERA TILT CALIBRATION ===');
+
+% Starts the motors
+
+% Camera tilt calibration data
+%     Lx[mm] Ly[mm] | Wx[px] Wy[px]
+tiltCalibration = zeros(0, 4);
+
+calibrationPoints = 4;
+
+
+
+
+% Loops over all the points ---------------------------------------------
+for i = 1:calibrationPoints
+    % Get frame
+    frame = getsnapshot(vid);
+    imshow(frame);    
+    
+    % Input
+    [Lx, Ly] = ginput(1);
+    
+    tiltCalibration(i, 1) = Lx;
+    tiltCalibration(i, 2) = Ly;
+    
+    W = input('Coordinates for W = [Wx, Wy]: ');  
+    Wx = W(1);
+    Wy = W(2);
+    
+    tiltCalibration(i, 3) = Wx;
+    tiltCalibration(i, 4) = Wy;
+    
+    % Update the screen
+    hold on;
+    plot(tiltCalibration(1:i, 1), tiltCalibration(1:i, 2), 'x-');
+    hold off;
+    
+    fprintf('\tPoint: %i of %i,\tL: [%6.2f %6.2f][%%]\tW: [%6.2f %6.2f][px]\n', i, calibrationPoints, Lx, Ly, Wx, Wy);
+    
+    flushdata(vid);
+end
+
+% Calculates the tilt correction matrix
+TiltCorrection = cp2tform(tiltCalibration(:, 1:2), tiltCalibration(:, 3:4), 'projective');
+
+xRange = 120:10:310;
+yRange = 180:10:350;
+
+minX = min(xRange);
+maxX = max(xRange);
+
+minY = min(yRange);
+maxY = max(yRange);
+
+% Vertical -----------------------------------
+xGridPoints = zeros(0, 4);
+    % xStart, yStart, xEnd, yEnd
+for x = 120:10:310
+    xGridPoints =                       ...
+        [   xGridPoints;                ...
+            x,  minY,   x, maxY         ...
+        ];
+end
+xGridSpace_left  = tforminv(TiltCorrection, xGridPoints(:, 1:2));
+xGridSpace_right = tforminv(TiltCorrection, xGridPoints(:, 3:4));
+xGridSpace       = [xGridSpace_left, xGridSpace_right ];
+
+% Horizontal -----------------------------------
+yGridPoints = zeros(0, 4);
+    % xStart, yStart, xEnd, yEnd
+for y = 180:10:350
+    yGridPoints =                       ...
+        [   yGridPoints;                ...
+            minX,  y,   maxX, y         ...
+        ];
+end
+yGridSpace_left  = tforminv(TiltCorrection, yGridPoints(:, 1:2));
+yGridSpace_right = tforminv(TiltCorrection, yGridPoints(:, 3:4));
+yGridSpace       = [yGridSpace_left, yGridSpace_right ];
+
+gridSpace = [xGridSpace;yGridSpace];
+
+% Clear up memory
+clear xRange
+clear yRange
+
+clear xGridPoints
+clear yGridPoints
+
+clear xGridSpace_left
+clear yGridSpace_left
+
+clear xGridSpace
+clear yGridSpace
+
+
+hold on;
+drawgrid(gridSpace);
+hold off;
+
+
+% Max and min of the working space
+%Wx_min = tformfwd(TiltCorrection, [0, 0]);
+%Wx_max = tformfwd(TiltCorrection, [Lx, Ly]);
+
+%% === TRAINING SET GENERATION ===========================================
+%   The calibration requires a relevant amount of points to test the
+%   effectiveness of the inverse kinematics model.
+%   This training set is in the form of positions of the robotic arms (Ma,
+%   Mb in percent) and how they are mapped into the workspace (Wx, Wy in
+%   centimeters).
+%   Since data are acquired from the camera, initially only the position in
+%   pixel is known. A conversion to workspace coordinates is done using the
+%   camera tilt calibration previously done.
+
+disp('=== TRAINING SET GENERATION ===');
+
+% Starts the motors
+s = startMotors(port);
+
+% Limits of the actuators (in percent)
+M_min = 0   +10;
+M_max = 100 -10;
+
+%trainingPoints = 250*1;
+trainingPoints = 100;
+trainingSet = zeros(0, 6);
+%    Ma[%] Mb[%] | Wx[mm] Wy[mm] | Lx[px] Ly[px]
+
+
+% Grid of points ----------------------------------------------------
+% Points to move
+points_Ma = 2; % How many points on the grid for Ma
+points_Mb = 2; % How many points on the grid for Mb
+
+resolution_Ma = ceil(   (M_max - M_min)/(points_Ma -1)  );
+resolution_Mb = ceil(   (M_max - M_min)/(points_Mb -1)  );
+
+Mas = M_min:resolution_Ma:M_max;
+Mbs = M_min:resolution_Mb:M_max;
+
+% Generates the grid
+Ms = zeros(length(Mas)*length(Mbs),2);
+i = 1;
+for     ia = 1:length(Mas)
+    for ib = 1:length(Mbs)
+        % Points in the grid with random noise added
+        Ma = Mas(ia) + randn() * resolution_Ma *0;
+        Mb = Mbs(ib) + randn() * resolution_Mb *0;
+        
+        %Ms(i, :) = [Ma, Mb];
+        Ms(i, 1) = Ma;
+        Ms(i, 2) = Mb;
+        i = i+1;
+    end % Mb loop
+end     % Ma loop
+
+% Populates the training set -----------------------------------------
+%for i = 1:trainingPoints %size(trainingSet,1)
+%    % Moves the motors and wait
+%    Ma = randi([M_min, M_max]);
+%    Mb = randi([M_min, M_max]);
+%Ms = zeros(length(Mas), length(Mbs));
+%for     ia = 1:length(Mas)
+%    for ib = 1:length(Mbs)
+        % Points in the grid with random noise added
+        %Ma = Mas(ia) + randn() * resolution_Ma;
+        %Mb = Mbs(ib) + randn() * resolution_Ma;
+for i=1:length(Ms)
+    %[Ma, Mb] = Ms(i);
+    Ma = Ms(i, 1);
+    Mb = Ms(i, 2);
+    
+    moveMotors(s, Ma, Mb, true);
+
+    % Gets the current laser position
+    frame = getsnapshot(vid);
+    [Lx, Ly, boundingBox] = util_findlaser(frame);
+    if isnan(Lx) || isnan(Ly)
+        continue
+    end
+
+    % Converts from pixel (L, camera space) to millimiters (W, workspace)
+    [Wx, Wy] = tformfwd(TiltCorrection, [Lx, Ly]);
+
+    % Saves information
+    trainingSet = ...
+        [   trainingSet; ...
+            Ma,   Mb,     Wx,    Wy,      Lx,   Ly   ...
+        ];
+    %       Ma[%] Mb[%] | Wx[mm] Wy[mm] | Lx[px] Ly[px]
+
+    % Update the screen
+    util_plotpos(frame, Lx, Ly, boundingBox);
+    hold on;
+    %plot(tiltCalibration(:, 5), tiltCalibration(:, 6));
+    drawgrid(gridSpace);
+    plot(trainingSet(:, 5), trainingSet(:, 6), 'x');
+    hold off;
+
+    fprintf('\tPoint: %i of %i,\tM: [%6.2f %6.2f][%%]\tL: [%6.2f %6.2f][px]\tW: [%6.2f %6.2f][mm]\n', i, trainingPoints, Ma, Mb, Lx, Ly, Wx, Wy);
+
+    flushdata(vid);
+
+
+    % MATLAB has communication problems with Arduino:
+    % it is necessary to periodically reset the connection to avoid them
+    if mod(i,100) == 0
+        stopMotors(s);
+        s = startMotors(port);
+    end
+        
+ end
+
+% Stop the motors
+stopMotors(s);
+
+% Auto save --------------------------------------------------------------
+if autosave == true
+    fileDate = datestr(now, datetimeFormat);
+    save(   strcat('FullCalibration_training', ' (', fileDate, ').mat')    );
+    %saveWorkspace('FullCalibration');
+    
+    % Save picture
+    saveas(gcf,strcat('FullCalibration_training', ' (', fileDate, ').png'),'png');
+    
+    % Saves diary
+    diary off;
+    diary on;
+end
+
+
+%% === PARAMETERS OPTIMISATION ===========================================
+%   The inverse kinematics technique adopted relies on an ideal
+%   representation of the experimental setup. Theoretically, having perfect
+%   measurements of all the necessary parameters and no source of noise and
+%   uncertainty, it would provide the optimal answer.
+%   Since there is a relevant measure inaccuracy, a parameters optimisation
+%   is used to find the ones that minimise the prediction error of the
+%   forward kinematics over the training set.
+%   An initial guess of the parameters is required and can be an
+%   approximate measurement of the setup elements.
+
+disp('=== PARAMETERS OPTIMISATION ===');
+
+% Not a parameter
+G_z0 = 0;
+
+% Initial guess for the parameters
+G_z1 = 150;
+G_z2 = 200;
+%G_z1 = 125;
+%G_z2 = 175;
+
+G_Ca = [ 15, 185, G_z1];    % Where the first LA is attached
+G_Cb = [190,  15, G_z1];    % Where the second LA is attached
+G_P  = [180, 200, G_z2];    % Where the laser is attached
+
+G_Eb = [25,    0,    6];    % Extension on the second arm where the laser is attached
+G_R_0   = 208;            % Length robotic arm at (Ma @   0%, in mm)
+G_R_100 = 158;            % Length robotic arm at (Ma @ 100%, in mm)
+%G_R_0   = 227;            % Length robotic arm at (Ma @   0%, in mm)
+%G_R_100 = 175;            % Length robotic arm at (Ma @ 100%, in mm)
+
+% x(1): Ca x
+% x(2): Ca y
+% x(3): Cb x
+% x(4): Cb y
+% x(5): Ca z, Cb z
+% x(6): P  x
+% x(7): P  y
+% x(8): P  z
+% x(9):  R_0
+% x(10): R_100
+% x(11): G_Eb x
+% x(12): G_Eb z
+% x(13): G_z0
+initial_params = [G_Ca(1), G_Ca(2), G_Cb(1), G_Cb(2), G_Ca(3), G_P(1), G_P(2), G_P(3), G_R_0, G_R_100, G_Eb(1), G_Eb(3), G_z0];
+
+% Limits the search space for the optimisation algorithm
+measurementError = 35;
+lb = initial_params - measurementError;
+ub = initial_params + measurementError;
+
+% Optimisation algorithm -----------------------------------------
+options = optimset                  ...
+    (   'MaxFunEvals', 100000000,   ...
+        'MaxIter',       1000000,   ...
+        'TolFun',          1e-8,   ...
+        'TolX',            1e-8,   ...
+        'FinDiffType', 'central',   ...
+        'FunValCheck', 'on'         ...
+        ...%'PlotFcns', @optimplotfirstorderopt     ...
+);
+[est_params, resnorm] = lsqnonlin    ...
+    (   @(x)residualErrorVector         ...
+            (   [x(1), x(2), x(5)],         ... % Ca
+                [x(3), x(4), x(5)],         ... % Cb
+                [x(11),   0, x(12)],        ... % Eb
+                [x(6), x(7), x(8)],         ... % P
+                trainingSet,                ... % Training set (Ma[%], Mb[%], Wx[mm], Wy[mm])
+                x(9), x(10),                ... % R_0, R_100
+                x(13)                       ... % z0
+             ),                         ...
+        initial_params, lb, ub,      ...
+        options                      ...
+    );
+%options = optimset('MaxFunEvals', 1000000, 'MaxIter', 10000, 'TolFun',1e-8, 'TolX',1e-8, 'FinDiffType', 'central', 'FunValCheck', 'on', 'PlotFcns', @optimplotfirstorderopt  );
+
+% Extract the estimated parameters that maximise the model performance
+Ca = [est_params(1), est_params(2), est_params(5)];
+Cb = [est_params(3), est_params(4), est_params(5)];
+P  = [est_params(6), est_params(7), est_params(8)];
+
+
+Eb   = [ est_params(11), 0, est_params(12) ];
+
+R_0   = est_params(9);
+R_100 = est_params(10);
+
+z0 = est_params(13);
+
+% Print difference after optimisation
+error  = initial_params - est_params;
+%fprintf('\tResnorm: %6.2f\n', resnorm);
+fprintf('\tError: %6.2f [mm]\n', sqrt(resnorm/length(trainingSet)));
+fprintf('\tErrors (+-%6.2f):\n', measurementError);
+fprintf('\t\tZ : (0:) %6.2f\t(1:) %6.2f (2:) %6.2f [mm]\n',    error(13), error(5), error(8));
+fprintf('\t\tCa: [%6.2f\t%6.2f\t%6.2f\t] [mm]\n', error(1), error(2), error(5)   );
+fprintf('\t\tCb: [%6.2f\t%6.2f\t%6.2f\t] [mm]\n', error(3), error(4), error(5)   );
+fprintf('\t\tEb: [%6.2f\t%6.2f\t%6.2f\t] [mm]\n', error(11), 0, error(12));
+fprintf('\t\tP : [%6.2f\t%6.2f\t%6.2f\t] [mm]\n', error(6), error(7), error(8)   );
+fprintf('\t\tR : (0:) %6.2f\t(100:) %6.2f [mm]\n',    error(9), error(10));
+
+% Auto save --------------------------------------------------------------
+if autosave == true
+    fileDate = datestr(now, datetimeFormat);
+    save(   strcat('FullCalibration_optimisation', ' (', fileDate, ').mat')    );
+    %saveWorkspace('FullCalibration');
+    
+    % Saves diary
+    diary off;
+    diary on;
+end
+
+
+%% === VALIDATION SET GENERATION =========================================
+%   Even using the parameters that minimise the error over the training
+%   set, the model is technically inaccurate.
+%   To compensate for this, points are randomly chosen and the error from
+%   the real position to the predicted one is calculated.
+%   These data is used to compile a regression model of the error.
+
+disp('=== VALIDATION SET GENERATION ===');
+
+% Starts the motors
+s = startMotors(port);
+
+%validationPoints = 250*4
+validationSet = zeros(0, 18);
+    %	Ma_prev[mm] Mb_prev[mm] | Ma[mm] Mb[mm] |
+    %   Lx_prev[mm] Ly_prev[mm] |
+    %   Lx[mm] Ly[mm] | Lx_real[px] Ly_real[px] |
+    %   LEx[mm] LEy[mm]
+    %   Wx[px] Wy[px] | Wx_real[px] Wy_real[px] |
+    %   WEx[mm] WEy[mm]
+    
+
+% NO!
+    %	Ra_prev[mm] Rb_prev[mm] | Ra[mm] Rb[mm] |
+    %   Wx[mm] Wy[mm] | Wx_real[mm] Wy_real[mm] |
+    %   Ex[mm] WEy[mm] |
+    %   Lx[px] Ly[px] | Lx_real[px] Ly_real[px] |
+    %   LEx[px] LEy[px] 
+
+% Initial position
+Ra_prev = R_0;
+Rb_prev = R_0;
+moveMotors(s, Ra_prev, Rb_prev, true);
+
+% Uses the training set to identify reasonable bounds
+% to generate values to test error.
+Ma_min = floor( min(trainingSet(:,1))   );
+Ma_max = ceil ( max(trainingSet(:,1))   );
+Mb_min = floor( min(trainingSet(:,2))   );
+Mb_max = ceil ( max(trainingSet(:,2))   );
+%   TrainingSet:
+%   Ma[%] Mb[%] | Wx[mm] Wy[mm] | Lx[px] Ly[px]
+
+
+% TODO: REMOVE ME!
+Ma_min = 40;
+Ma_max = 60;
+Mb_min = 40;
+Mb_max = 60;
+
+% How many point on the Ma and Mb axes
+resolution_Ma = 10;
+resolution_Mb = 10;
+
+Ma_step = (Ma_max - Ma_min) / (resolution_Ma -1);
+Mb_step = (Mb_max - Mb_min) / (resolution_Mb -1);
+
+
+
+% Generate ranges
+Range_Ma = Ma_min:Ma_step:Ma_max;
+Range_Mb = Mb_min:Mb_step:Mb_max;
+
+
+resolution_Ma_prev = 5;
+resolution_Mb_prev = 5;
+
+Ma_step_prev = (Ma_max - Ma_min) / (resolution_Ma_prev -1);
+Mb_step_prev = (Mb_max - Mb_min) / (resolution_Mb_prev -1);
+
+Range_Ma_prev = Ma_min:Ma_step_prev:Ma_max;
+Range_Mb_prev = Mb_min:Mb_step_prev:Mb_max;
+
+
+
+% Populates the validation set -----------------------------------------
+i = 1;
+% Loops over the destination points M = [Ma, Mb] ...
+for i_Ma = 1:length(Range_Ma)
+    Ma = Range_Ma(i_Ma);
+    
+    for i_Mb = 1:length(Range_Mb)
+        Mb = Range_Mb(i_Mb);
+        
+        fprintf('\tDestination point (%i, %i):\tM: [%6.2f %6.2f][%%] ...\n', i_Ma, i_Mb,  Ma, Mb);
+        
+        % Theoretical point in the workspace
+        Ra = linearInterpolation(0, R_0, 100, R_100, Ma);
+        Rb = linearInterpolation(0, R_0, 100, R_100, Mb);
+        
+        [Wx, Wy, Wz] = forwardKinematics(Ca, Ra, Cb, Rb, Eb, P, z0);
+        [Lx, Ly] = tforminv(TiltCorrection, [Wx, Wy]);
+        
+        % Starting from all other possibile W_prev ...
+        for i_Ma_prev = 1:length(Range_Ma_prev)
+            Ma_prev_x = Range_Ma_prev(i_Ma_prev);
+            for i_Mb_prev = 1:length(Range_Mb_prev)
+                Mb_prev_x = Range_Mb_prev(i_Mb_prev);
+                
+                % Previous position --------------------------------------
+                % Moves the motors to the W_prev position
+                moveMotors(s, Ma_prev_x, Mb_prev_x, true);
+                
+                 % Gets the current laser position
+                frame = getsnapshot(vid);
+                [Lx_prev, Ly_prev, boundingBox] = util_findlaser(frame);
+                if isnan(Lx_prev) || isnan(Ly_prev) 
+                    continue
+                end
+                
+                util_plotpos(frame, Lx_prev, Ly_prev, boundingBox);
+                hold on;
+                %plot(tiltCalibration(:, 5), tiltCalibration(:, 6));
+                drawgrid(gridSpace);
+                quiver(validationSet(:,  7), validationSet(:, 8), validationSet(:, 11), validationSet(:, 12),0);
+                hold off;
+                
+                % Actual position ----------------------------------------
+                moveMotors(s, Ma, Mb, true);
+                
+                 % Gets the current laser position
+                frame = getsnapshot(vid);
+                [Lx_real, Ly_real, boundingBox] = util_findlaser(frame);
+                if isnan(Lx_real) || isnan(Ly_real) 
+                    continue
+                end
+                                
+                % In workspace coordinate
+                [Wx_real, Wy_real] = tformfwd(TiltCorrection, [Lx_real, Ly_real]);
+                
+                % Calculate error ----------------------------------------
+                % Error between 
+                LEx = Lx_real - Lx;
+                LEy = Ly_real - Ly;
+                
+                WEx = Wx_real - Wx;
+                WEy = Wy_real - Wy;
+                
+                [Wx_real, Wy_real] = tformfwd(TiltCorrection, [Lx_real, Ly_real]);
+                
+               
+                % Saves information --------------------------------------
+                validationSet = ...
+                    [   validationSet; ...
+                        Ma_prev_x,     Mb_prev_x,     Ma,    Mb,    ...
+                        Lx_prev,    Ly_prev,    ...
+                        Lx,   Ly, Lx_real, Ly_real, ...
+                        LEx,    LEy,    ...
+                        Wx,   Wy,   Wx_real, Wy_real,   ...
+                        WEx,   WEy            ...
+                    ];
+                %	Ma_prev[mm] Mb_prev[mm] | Ma[mm] Mb[mm] |
+                %   Lx_prev[mm] Ly_prev[mm] |
+                %   Lx[mm] Ly[mm] | Lx_real[px] Ly_real[px] |
+                %   LEx[mm] LEy[mm]
+                %   Wx[px] Wy[px] | Wx_real[px] Wy_real[px] |
+                %   WEx[mm] WEy[mm]
+                
+                % Update the screen
+                util_plotpos(frame, Lx_real, Ly_real, boundingBox);
+                hold on;
+                %plot(tiltCalibration(:, 5), tiltCalibration(:, 6));
+                drawgrid(gridSpace);
+                quiver(validationSet(:,  7), validationSet(:, 8), validationSet(:, 11), validationSet(:, 12),0);
+                hold off;
+                
+                %fprintf('\tPoint: %i of %i,\tLE:  [%6.2f %6.2f][px]\tWE: [%6.2f %6.2f][mm]\tW: [%6.2f %6.2f][mm]\tW_real: [%6.2f %6.2f][mm]\tM: [%6.2f %6.2f][%%]\n', i, validationPoints,  LEx, LEy, WEx, WEy, Wx, Wy, Wx_real, Wy_real, Ma, Mb);
+                %fprintf('\tPoint: %i of %i,\tM_prev:  [%6.2f %6.2f][%%]\tM: [%6.2f %6.2f][%%]\tWE: [%6.2f %6.2f][mm]\n', i, validationPoints,  Ma_prev, Mb_prev, Ma, Mb, WEx, WEy);
+                fprintf('\t\tStarting point (%i, %i):\tM_prev: [%6.2f %6.2f][%%]\tWE: [%6.2f %6.2f][mm]\n', i_Ma_prev, i_Mb_prev,  Ma_prev_x, Mb_prev_x, WEx, WEy);
+                
+                flushdata(vid);
+                
+                
+                
+                % MATLAB has communication problems with Arduino:
+                % it is necessary to periodically reset the connection to avoid them
+                if mod(i,100) == 0
+                    stopMotors(s);
+                    s = startMotors(port);
+                end
+                i = i +1;
+            end
+        end
+    end
+end
+
+% Stops motors
+stopMotors(s);
+
+% Data
+ELx_avg = mean(validationSet(:,11));
+ELy_avg = mean(validationSet(:,12));
+
+EWx_avg = mean(validationSet(:,17));
+EWy_avg = mean(validationSet(:,18));
+    %	Ma_prev[mm] Mb_prev[mm] | Ma[mm] Mb[mm] |
+    %   Lx_prev[mm] Ly_prev[mm] |
+    %   Lx[mm] Ly[mm] | Lx_real[px] Ly_real[px] |
+    %   LEx[mm] LEy[mm]
+    %   Wx[px] Wy[px] | Wx_real[px] Wy_real[px] |
+    %   WEx[mm] WEy[mm]
+
+fprintf('\tAverage error:\n');
+fprintf('\t\tLE: [%6.2f %6.2f][px]\n', ELx_avg, ELy_avg);
+fprintf('\t\tWE: [%6.2f %6.2f][mm]\n', EWx_avg, EWy_avg);
+
+
+% Auto save --------------------------------------------------------------
+if autosave == true
+    fileDate = datestr(now, datetimeFormat);
+    save(   strcat('FullCalibration_validation', ' (', fileDate, ').mat')    );
+    %saveWorkspace('FullCalibration');
+    
+    % Save picture
+    saveas(gcf,strcat('FullCalibration_validation', ' (', fileDate, ').png'),'png');
+    
+    % Saves diary
+    diary off;
+    diary on;
+end
+
+
+%% === ERROR MODEL =======================================================
+
+disp('=== ERROR MODEL ===');
+
+% Train the regressor ---------------------------------------------------
+c = 0.75;
+n = length(validationSet);
+trainSet = validationSet(1:ceil (n * 0.75),    :);
+testSet  = validationSet(  floor(n * 0.75):end,:);
+
+    %	Ma_prev[mm] Mb_prev[mm] | Ma[mm] Mb[mm] |
+    %   Lx_prev[mm] Ly_prev[mm] |
+    %   Lx[mm] Ly[mm] | Lx_real[px] Ly_real[px] |
+    %   LEx[mm] LEy[mm]
+    %   Wx[px] Wy[px] | Wx_real[px] Wy_real[px] |
+    %   WEx[mm] WEy[mm]
+
+
+%trainInput  = trainSet(:, 1:4 );
+trainInput  = trainSet(:, [1,2,3,4] );
+trainOutput = trainSet(:, 17:18);
+
+%testInput   = testSet (:, 1:4 );
+testInput   = testSet (:, [1,2,3,4] );
+testOutput  = testSet (:, 17:18);
+
+min_rmse = +inf;
+ErrorParams = NaN;
+
+min_basisFunctions = 2;
+max_basisFunctions = 4;
+for basisFunctions = min_basisFunctions:max_basisFunctions
+    % Train and test
+    params     = trainRegressor(trainInput, trainOutput, basisFunctions);
+    testResult = testRegressor(testInput, params);
+    
+    % Error
+    rmse = norm(    mean( sqrt(    (testResult - testOutput).^2 ) ) );
+    if rmse < min_rmse
+        ErrorParams = params;
+        min_rmse = rmse;
+    end
+    rmse
+end
+
+clear params
+clear rmse
+
+% TODO: It should check for the best k
+% TODO: It should not use random gaussians
+% TODO: It should integrate the previous position
+
+% Auto save --------------------------------------------------------------
+if autosave == true
+    fileDate = datestr(now, datetimeFormat);
+    save(   strcat('FullCalibration_regressor', ' (', fileDate, ').mat')    );
+    %saveWorkspace('FullCalibration');
+    
+    % Saves diary
+    diary off;
+    diary on;
+end
+
+%% REGRESSOR ONLY (horrendous)
+
+%p1 = trainRegressor(validationSet(:,[1,2,7,8]), validationSet(:,3:4), 3);
+%p2 = trainRegressor(validationSet(:,[7,8]), validationSet(:,3:4), 3);
+%	Ra_prev[mm] Rb_prev[mm] | Ra[mm] Rb[mm] |
+%   Wx[mm] Wy[mm] | Wx_real[mm] Wy_real[mm] |
+%   WEx[mm] WEy[mm] |
+%   Lx[px] Ly[px] | Lx_real[px] Ly_real[px] |
+%   LEx[px] LEy[px] 
+
+
+
+
+%% === INTERACTIVE PRECISION TEST ====================================================
+
+
+disp('=== INTERACTIVE PRECISION TEST ===');
+
+
+% Does it use the mouse?
+interactive = true;
+
+% Starts the motors
+s = startMotors(port);
+
+
+% Uses the training set to identify reasonable bounds
+% to generate values to test error.
+Lx_min = floor( min(trainingSet(:,5))   );
+Lx_max = ceil ( max(trainingSet(:,5))   );
+Ly_min = floor( min(trainingSet(:,6))   );
+Ly_max = ceil ( max(trainingSet(:,6))   );
+%   TrainingSet:
+%   Ma[%] Mb[%] | Wx[mm] Wy[mm] | Lx[px] Ly[px]
+
+% Reset motor positions
+Ra_prev = 50;
+Rb_prev = 50;
+
+moveMotors(s, Ra_prev, Rb_prev, true);
+pause(5);
+
+% First shot
+frame = getsnapshot(vid);
+imshow(frame);
+hold on;
+drawgrid(gridSpace);
+hold off;
+
+
+
+% Error sets
+errorPoints = 10;
+errorSet = zeros(0, 16);
+%	Ra_prev[mm] Rb_prev[mm] | Ra[mm] Rb[mm] |
+%   Wx[mm] Wy[mm] | Wx_real[mm] Wy_real[mm] |
+%   WEx[mm] WEy[mm] |
+%   Lx[px] Ly[px] | Lx_real[px] Ly_real[px] |
+%   LEx[px] LEy[px] 
+
+for i = 1:errorPoints
+    % Input
+    if interactive == true
+        % Wait for the user input
+        [Lx, Ly] = ginput(1);
+    else
+        Lx = randi([Lx_min, Lx_max]);
+        Ly = randi([Ly_min, Ly_max]);
+    end
+    
+    % Move the motors
+    [Ma, Mb, Ra, Rb] = inverseKinematicsWithErrorCompensation (Ca, Cb, Eb, P, [Lx, Ly], z0, TiltCorrection, R_0, R_100, Ra_prev, Rb_prev);    % Inverse kineamtics - NO error correction
+    %[Ma, Mb, Ra, Rb] = inverseKinematicsWithErrorCompensation (Ca, Cb, Eb, P, [Lx, Ly], z0, TiltCorrection, R_0, R_100, Ra_prev, Rb_prev, ErrorParams);    % Inverse kineamtics + error correction
+    %[Ma, Mb, Ra, Rb] = inverseKinematicsRegressionOnly([Lx, Ly], TiltCorrection, R_0, R_100, Ra_prev, Rb_prev, p1); % Regression only
+    moveMotors(s, Ma, Mb, true);
+    
+    % Gets the current laser position
+    frame = getsnapshot(vid);
+    [Lx_real, Ly_real, boundingBox] = util_findlaser(frame);
+    if isnan(Lx_real) || isnan(Ly_real)
+        
+        Ra_prev = Ra;
+        Rb_prev = Rb;
+       continue
+    end
+    
+    
+    % Converts from pixel (L, camera space) to millimiters (W, workspace)
+    % User only for info
+    [Wx_real, Wy_real] = tformfwd(TiltCorrection, [Lx_real, Ly_real]);
+    % Where the point L (pixel) is expected to be in the workspace (mm)
+    % Used only for info
+    [Wx, Wy] = tformfwd(TiltCorrection, [Lx, Ly]);
+    
+    WEx = Wx_real - Wx;
+    WEy = Wy_real - Wy;
+    
+    LEx = Lx_real - Lx;
+    LEy = Ly_real - Ly;
+    
+    % Saves information
+    errorSet = ...
+        [   errorSet; ...
+            Ra_prev,     Rb_prev,     Ra,    Rb,    ...
+            Wx,    Wy,      Wx_real,    Wy_real,    ...
+            WEx,   WEy            ...
+            Lx,    Ly, Lx_real, Ly_real, ...
+            LEx,   LEy ...
+        ];
+        %	Ra_prev[mm] Rb_prev[mm] | Ra[mm] Rb[mm] |
+        %   Wx[mm] Wy[mm] | Wx_real[mm] Wy_real[mm] |
+        %   WEx[mm] WEy[mm] |
+        %   Lx[px] Ly[px] | Lx_real[px] Ly_real[px] |
+        %   LEx[px] LEy[px]
+    
+    Ra_prev = Ra;
+    Rb_prev = Rb;
+       
+    % Update the screen
+    util_plotpos(frame, Lx_real, Ly_real, boundingBox);
+    hold on;
+    %plot(tiltCalibration(:, 5), tiltCalibration(:, 6));
+    drawgrid(gridSpace);
+    %quiver(errorSet(1:i, 13), errorSet(1:i, 14), errorSet(1:i, 15), errorSet(1:i, 16),0);
+    quiver(errorSet(1:i, 13), errorSet(1:i, 14), -errorSet(1:i, 15), -errorSet(1:i, 16),0);
+    hold off;
+    
+    fprintf('\tPoint: %i of %i,\tLE:  [%6.2f %6.2f][px]\tWE: [%6.2f %6.2f][mm]\tW: [%6.2f %6.2f][mm]\tW_real: [%6.2f %6.2f][mm]\tM: [%6.2f %6.2f][%%]\n', i, errorPoints,  LEx, LEy, WEx, WEy, Wx, Wy, Wx_real, Wy_real, Ma, Mb);
+    
+    %fprintf('\tPoint: %i of %i,\tLE:  [%6.2f %6.2f][px]\tWE: [%6.2f %6.2f][mm]\tW: [%6.2f %6.2f][mm]\tW_real: [%6.2f %6.2f][mm]\tM: [%6.2f %6.2f][%%]\n', i, validationPoints,  LEx, LEy, WEx, WEy, Wx, Wy, Wx_real, Wy_real, Ma, Mb);
+    %fprintf('\tPoint: %i of %i,\tLE:  [%6.2f %6.2f][px]\tWE: [%6.2f %6.2f][mm]\tW: [%6.2f %6.2f][mm]\tW_real: [%6.2f %6.2f][mm]\tM: [%6.2f %6.2f][%%]\n', i, validationPoints,  LEx, LEy, WEx, WEy, Wx, Wy, Wx_real, Wy_real, Ma, Mb);
+    
+    flushdata(vid);
+end
+
+% Data
+ELx_avg = mean(errorSet(:,15));
+ELy_avg = mean(errorSet(:,16));
+
+EWx_avg = mean(errorSet(:, 9));
+EWy_avg = mean(errorSet(:,10));
+
+fprintf('\tAverage error:\n');
+fprintf('\t\tLE: [%6.2f %6.2f][px]\n', ELx_avg, ELy_avg);
+fprintf('\t\tWE: [%6.2f %6.2f][mm]\n', EWx_avg, EWy_avg);
+
+% Stops the motors
+stopMotors(s);
+
+% Auto save --------------------------------------------------------------
+if autosave == true
+    fileDate = datestr(now, datetimeFormat);
+    save(   strcat('FullCalibration_interactive', ' (', fileDate, ').mat')    );
+    %saveWorkspace('FullCalibration');
+    
+    % Save picture
+    saveas(gcf,strcat('FullCalibration_interactive', ' (', fileDate, ').png'),'png');
+    
+    % Saves diary
+    diary off;
+    diary on;
+end
+
+
+
+%% === STOP ==============================================================
+% Stop the motors
+fprintf(s, 'STOP\n');
+data=fscanf(s);
+%%
+disp('=== STOP ===');
+stop(vid); flushdata(vid); 
+%%
+fclose(s);
+diary off;
+fprintf('\tStopped.\n');

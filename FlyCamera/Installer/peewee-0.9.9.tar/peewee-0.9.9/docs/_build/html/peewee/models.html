@@ -1,0 +1,628 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Model API (smells like django) &mdash; peewee 0.9.8 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="peewee 0.9.8 documentation" href="../index.html" />
+    <link rel="next" title="Fields" href="fields.html" />
+    <link rel="prev" title="Example app" href="example.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="fields.html" title="Fields"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="example.html" title="Example app"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="model-api-smells-like-django">
+<span id="models"></span><h1>Model API (smells like django)<a class="headerlink" href="#model-api-smells-like-django" title="Permalink to this headline">¶</a></h1>
+<p>Models and their fields map directly to database tables and columns.  Consider
+the following:</p>
+<div class="highlight-python" id="blog-models"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">peewee</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">SqliteDatabase</span><span class="p">(</span><span class="s">&#39;test.db&#39;</span><span class="p">)</span>
+
+<span class="c"># create a base model class that our application&#39;s models will extend</span>
+<span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">db</span>
+
+
+<span class="k">class</span> <span class="nc">Blog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span> <span class="c"># &lt;-- VARCHAR</span>
+
+
+<span class="k">class</span> <span class="nc">Entry</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">headline</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">TextField</span><span class="p">()</span> <span class="c"># &lt;-- TEXT</span>
+    <span class="n">pub_date</span> <span class="o">=</span> <span class="n">DateTimeField</span><span class="p">()</span> <span class="c"># &lt;-- DATETIME</span>
+    <span class="n">blog</span> <span class="o">=</span> <span class="n">ForeignKeyField</span><span class="p">()</span> <span class="c"># &lt;-- INTEGER referencing the Blog table</span>
+</pre></div>
+</div>
+<p>This is a typical example of how to specify models with peewee.  There are several
+things going on:</p>
+<ol class="arabic">
+<li><p class="first">Create an instance of a <a class="reference internal" href="database.html#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a></p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="n">db</span> <span class="o">=</span> <span class="n">SqliteDatabase</span><span class="p">(</span><span class="s">&#39;test.db&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This establishes an object, <tt class="docutils literal"><span class="pre">db</span></tt>, which is used by the models to connect to and
+query the database.  There can be multiple database instances per application, but,
+as I hope is obvious, <a class="reference internal" href="fields.html#ForeignKeyField" title="ForeignKeyField"><tt class="xref py py-class docutils literal"><span class="pre">ForeignKeyField</span></tt></a> related models must be on the same
+database.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Create a base model class which specifies our database</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">db</span>
+</pre></div>
+</div>
+<p>Model configuration is kept namespaced in a special class called <tt class="docutils literal"><span class="pre">Meta</span></tt> &#8211; this
+convention is borrowed from Django, which does the same thing.  <tt class="docutils literal"><span class="pre">Meta</span></tt> configuration
+is passed on to subclasses, so this code basically allows all our project&#8217;s models
+to connect to our database.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Declare a model or two</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Blog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Model definition is pretty similar to django or sqlalchemy &#8211; you basically define
+a class which represents a single table in the database, then its attributes (which
+are subclasses of <a class="reference internal" href="fields.html#Field" title="Field"><tt class="xref py py-class docutils literal"><span class="pre">Field</span></tt></a>) represent columns.</p>
+<p>Models provide methods for creating/reading/updating/deleting rows in the
+database.</p>
+</div></blockquote>
+</li>
+</ol>
+<div class="section" id="creating-tables">
+<h2>Creating tables<a class="headerlink" href="#creating-tables" title="Permalink to this headline">¶</a></h2>
+<p>In order to start using these models, its necessary to open a connection to the
+database and create the tables first:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># connect to our database</span>
+<span class="n">db</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+<span class="c"># create the tables</span>
+<span class="n">Blog</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span>
+<span class="n">Entry</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Strictly speaking, the explicit call to <a class="reference internal" href="database.html#Database.connect" title="Database.connect"><tt class="xref py py-meth docutils literal"><span class="pre">connect()</span></tt></a> is not
+necessary, but it is good practice to be explicit about when you are opening
+and closing connections.</p>
+</div>
+</div>
+<div class="section" id="model-instances">
+<h2>Model instances<a class="headerlink" href="#model-instances" title="Permalink to this headline">¶</a></h2>
+<p>Assuming you&#8217;ve created the tables and connected to the database, you are now
+free to create models and execute queries.</p>
+<p>Creating models in the interactive interpreter is a snap.</p>
+<ol class="arabic">
+<li><p class="first">Use the <a class="reference internal" href="#Model.create" title="Model.create"><tt class="xref py py-meth docutils literal"><span class="pre">Model.create()</span></tt></a> classmethod:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span> <span class="o">=</span> <span class="n">Blog</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;Funny pictures of animals blog&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">entry</span> <span class="o">=</span> <span class="n">Entry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">headline</span><span class="o">=</span><span class="s">&#39;maru the kitty&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">content</span><span class="o">=</span><span class="s">&#39;http://www.youtube.com/watch?v=xdhLQCYQ-nQ&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">pub_date</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span>
+<span class="gp">... </span>    <span class="n">blog</span><span class="o">=</span><span class="n">blog</span>
+<span class="gp">... </span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">entry</span><span class="o">.</span><span class="n">blog</span><span class="o">.</span><span class="n">name</span>
+<span class="go">&#39;Funny pictures of animals blog&#39;</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Build up the instance programmatically:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span> <span class="o">=</span> <span class="n">Blog</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;Another sweet blog&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+<div class="section" id="traversing-foriegn-keys">
+<h3>Traversing foriegn keys<a class="headerlink" href="#traversing-foriegn-keys" title="Permalink to this headline">¶</a></h3>
+<p>As you can see from above, the foreign key from <tt class="docutils literal"><span class="pre">Entry</span></tt> to <tt class="docutils literal"><span class="pre">Blog</span></tt> can be
+traversed automatically:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">entry</span><span class="o">.</span><span class="n">blog</span><span class="o">.</span><span class="n">name</span>
+<span class="go">&#39;Funny pictures of animals blog&#39;</span>
+</pre></div>
+</div>
+<p>The reverse is also true, we can iterate a <tt class="docutils literal"><span class="pre">Blog</span></tt> objects associated <tt class="docutils literal"><span class="pre">Entries</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">blog</span><span class="o">.</span><span class="n">entry_set</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">entry</span><span class="o">.</span><span class="n">headline</span>
+<span class="gp">...</span>
+<span class="go">maru the kitty</span>
+</pre></div>
+</div>
+<p>Under the hood, the <tt class="docutils literal"><span class="pre">entry_set</span></tt> attribute is just a <a class="reference internal" href="querying.html#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">entry_set</span>
+<span class="go">&lt;peewee.SelectQuery object at 0x151f510&gt;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">blog</span><span class="o">.</span><span class="n">entry_set</span><span class="o">.</span><span class="n">sql</span><span class="p">()</span>
+<span class="go">(&#39;SELECT * FROM entry WHERE blog_id = ?&#39;, [1])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="model-options">
+<h2>Model options<a class="headerlink" href="#model-options" title="Permalink to this headline">¶</a></h2>
+<p>In order not to pollute the model namespace, model-specific configuration is
+placed in a special class called <tt class="docutils literal"><span class="pre">Meta</span></tt>, which is a convention borrowed from
+the django framework:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">peewee</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">custom_db</span> <span class="o">=</span> <span class="n">SqliteDatabase</span><span class="p">(</span><span class="s">&#39;custom.db&#39;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">CustomModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">custom_db</span>
+</pre></div>
+</div>
+<p>This instructs peewee that whenever a query is executed on <tt class="docutils literal"><span class="pre">CustomModel</span></tt> to use
+the custom database.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Take a look at <a class="reference internal" href="#blog-models"><em>the sample models</em></a> - you will notice that
+we created a <tt class="docutils literal"><span class="pre">BaseModel</span></tt> that defined the database, and then extended.  This
+is the preferred way to define a database and create models.</p>
+</div>
+<p>There are several options you can specify as <tt class="docutils literal"><span class="pre">Meta</span></tt> attributes:</p>
+<ul>
+<li><p class="first">database: specifies a <a class="reference internal" href="database.html#Database" title="Database"><tt class="xref py py-class docutils literal"><span class="pre">Database</span></tt></a> instance to use with this model</p>
+</li>
+<li><p class="first">db_table: the name of the database table this model maps to</p>
+</li>
+<li><p class="first">ordering: a sequence of columns to use as the default ordering for this model</p>
+</li>
+<li><dl class="first docutils">
+<dt>pk_sequence: name of sequence to create for the primary key (peewee will autogenerate one</dt>
+<dd><p class="first last">if not provided and the backend supports sequences).</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Example of ordering:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Entry</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">TextField</span><span class="p">()</span>
+    <span class="n">created</span> <span class="o">=</span> <span class="n">DateTimeField</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="c"># order by created date descending, then title ascending</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">((</span><span class="s">&#39;created&#39;</span><span class="p">,</span> <span class="s">&#39;desc&#39;</span><span class="p">),</span> <span class="s">&#39;title&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>These options are &#8220;inheritable&#8221;, which means that you can define a database
+adapter on one model, then subclass that model and the child models will use
+that database.</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="n">my_db</span> <span class="o">=</span> <span class="n">PostgresqlDatabase</span><span class="p">(</span><span class="s">&#39;my_db&#39;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">database</span> <span class="o">=</span> <span class="n">my_db</span>
+
+<span class="k">class</span> <span class="nc">SomeModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">field1</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;field1&#39;</span><span class="p">,)</span>
+        <span class="c"># no need to define database again since it will be inherited from</span>
+        <span class="c"># the BaseModel</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="model-methods">
+<h2>Model methods<a class="headerlink" href="#model-methods" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="Model">
+<em class="property">class </em><tt class="descname">Model</tt><a class="headerlink" href="#Model" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="Model.save">
+<tt class="descname">save</tt><big>(</big><span class="optional">[</span><em>force_insert=False</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#Model.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the given instance, creating or updating depending on whether it has a
+primary key.  If <tt class="docutils literal"><span class="pre">force_insert=True</span></tt> an <tt class="docutils literal"><span class="pre">INSERT</span></tt> will be issued regardless
+of whether or not the primary key exists.</p>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">some_obj</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="s">&#39;new title&#39;</span> <span class="c"># &lt;-- does not touch the database</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">some_obj</span><span class="o">.</span><span class="n">save</span><span class="p">()</span> <span class="c"># &lt;-- change is persisted to the db</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.create">
+<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>**attributes</em><big>)</big><a class="headerlink" href="#Model.create" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>attributes</strong> &#8211; key/value pairs of model attributes</td>
+</tr>
+</tbody>
+</table>
+<p>Create an instance of the <tt class="docutils literal"><span class="pre">Model</span></tt> with the given attributes set.</p>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;admin&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Model.delete_instance">
+<tt class="descname">delete_instance</tt><big>(</big><span class="optional">[</span><em>recursive=False</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#Model.delete_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete the given instance.  Any foreign keys set to cascade on
+delete will be deleted automatically.  For more programmatic control,
+you can call with recursive=True, which will delete any non-nullable
+related models (those that <em>are</em> nullable will be set to NULL).</p>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">some_obj</span><span class="o">.</span><span class="n">delete_instance</span><span class="p">()</span> <span class="c"># &lt;-- it is gone forever</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.filter">
+<em class="property">classmethod </em><tt class="descname">filter</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#Model.filter" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> &#8211; a list of <tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> or <tt class="xref py py-class docutils literal"><span class="pre">Node</span></tt> objects</li>
+<li><strong>kwargs</strong> &#8211; a mapping of column + lookup to value, e.g. &#8220;age__gt=55&#8221;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="querying.html#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a> with appropriate <tt class="docutils literal"><span class="pre">WHERE</span></tt> clauses</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Provides a django-like syntax for building a query. The key difference
+between <a class="reference internal" href="#Model.filter" title="Model.filter"><tt class="xref py py-meth docutils literal"><span class="pre">filter()</span></tt></a> and <a class="reference internal" href="querying.html#SelectQuery.where" title="SelectQuery.where"><tt class="xref py py-meth docutils literal"><span class="pre">SelectQuery.where()</span></tt></a>
+is that <a class="reference internal" href="#Model.filter" title="Model.filter"><tt class="xref py py-meth docutils literal"><span class="pre">filter()</span></tt></a> supports traversing joins using
+django&#8217;s &#8220;double-underscore&#8221; syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sq</span> <span class="o">=</span> <span class="n">Entry</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">blog__title</span><span class="o">=</span><span class="s">&#39;Some Blog&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This method is chainable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">base_q</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">some_user</span> <span class="o">=</span> <span class="n">base_q</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;charlie&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.get">
+<em class="property">classmethod </em><tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#Model.get" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> &#8211; a list of <tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt> or <tt class="xref py py-class docutils literal"><span class="pre">Node</span></tt> objects</li>
+<li><strong>kwargs</strong> &#8211; a mapping of column + lookup to value, e.g. &#8220;age__gt=55&#8221;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> instance or raises <tt class="docutils literal"><span class="pre">DoesNotExist</span></tt> exception</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Get a single row from the database that matches the given query.  Raises a
+<tt class="docutils literal"><span class="pre">&lt;model-class&gt;.DoesNotExist</span></tt> if no rows are returned:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This method is also expose via the <a class="reference internal" href="querying.html#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">active</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">user</span> <span class="o">=</span> <span class="n">active</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">except</span> <span class="n">User</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">user</span> <span class="o">=</span> <span class="bp">None</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.get_or_create">
+<em class="property">classmethod </em><tt class="descname">get_or_create</tt><big>(</big><em>**attributes</em><big>)</big><a class="headerlink" href="#Model.get_or_create" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>attributes</strong> &#8211; key/value pairs of model attributes</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">a <a class="reference internal" href="#Model" title="Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> instance</td>
+</tr>
+</tbody>
+</table>
+<p>Get the instance with the given attributes set.  If the instance
+does not exist it will be created.</p>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">CachedObj</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">some_val</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.select">
+<em class="property">classmethod </em><tt class="descname">select</tt><big>(</big><em>query=None</em><big>)</big><a class="headerlink" href="#Model.select" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a <a class="reference internal" href="querying.html#SelectQuery" title="SelectQuery"><tt class="xref py py-class docutils literal"><span class="pre">SelectQuery</span></tt></a> for the given <tt class="docutils literal"><span class="pre">Model</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&#39;username&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.update">
+<em class="property">classmethod </em><tt class="descname">update</tt><big>(</big><em>**query</em><big>)</big><a class="headerlink" href="#Model.update" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">an <a class="reference internal" href="querying.html#UpdateQuery" title="UpdateQuery"><tt class="xref py py-class docutils literal"><span class="pre">UpdateQuery</span></tt></a> for the given <tt class="docutils literal"><span class="pre">Model</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">registration_expired</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">sql</span><span class="p">()</span>
+<span class="go">(&#39;UPDATE user SET active=? WHERE registration_expired = ?&#39;, [0, 1])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span> <span class="c"># &lt;-- execute it</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.delete">
+<em class="property">classmethod </em><tt class="descname">delete</tt><big>(</big><em>**query</em><big>)</big><a class="headerlink" href="#Model.delete" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a <a class="reference internal" href="querying.html#DeleteQuery" title="DeleteQuery"><tt class="xref py py-class docutils literal"><span class="pre">DeleteQuery</span></tt></a> for the given <tt class="docutils literal"><span class="pre">Model</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">sql</span><span class="p">()</span>
+<span class="go">(&#39;DELETE FROM user WHERE active = ?&#39;, [0])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span> <span class="c"># &lt;-- execute it</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Assume you have a model instance &#8211; calling <tt class="docutils literal"><span class="pre">model_instance.delete()</span></tt>
+does <strong>not</strong> delete it.</p>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.insert">
+<em class="property">classmethod </em><tt class="descname">insert</tt><big>(</big><em>**query</em><big>)</big><a class="headerlink" href="#Model.insert" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">an <a class="reference internal" href="querying.html#InsertQuery" title="InsertQuery"><tt class="xref py py-class docutils literal"><span class="pre">InsertQuery</span></tt></a> for the given <tt class="docutils literal"><span class="pre">Model</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;admin&#39;</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">registration_expired</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">sql</span><span class="p">()</span>
+<span class="go">(&#39;INSERT INTO user (username,active,registration_expired) VALUES (?,?,?)&#39;, [&#39;admin&#39;, 1, 0])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.raw">
+<em class="property">classmethod </em><tt class="descname">raw</tt><big>(</big><em>sql</em>, <em>*params</em><big>)</big><a class="headerlink" href="#Model.raw" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a <a class="reference internal" href="querying.html#RawQuery" title="RawQuery"><tt class="xref py py-class docutils literal"><span class="pre">RawQuery</span></tt></a> for the given <tt class="docutils literal"><span class="pre">Model</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s">&#39;select id, username from users&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">q</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">username</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.create_table">
+<em class="property">classmethod </em><tt class="descname">create_table</tt><big>(</big><span class="optional">[</span><em>fail_silently=False</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#Model.create_table" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fail_silently</strong> &#8211; If set to <tt class="docutils literal"><span class="pre">True</span></tt>, the method will check for the existence of the table
+before attempting to create.</td>
+</tr>
+</tbody>
+</table>
+<p>Create the table for the given model.</p>
+<p>example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">database</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">SomeModel</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span> <span class="c"># &lt;-- creates the table for SomeModel</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.drop_table">
+<em class="property">classmethod </em><tt class="descname">drop_table</tt><big>(</big><span class="optional">[</span><em>fail_silently=False</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#Model.drop_table" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fail_silently</strong> &#8211; If set to <tt class="docutils literal"><span class="pre">True</span></tt>, the query will check for the existence of
+the table before attempting to remove.</td>
+</tr>
+</tbody>
+</table>
+<p>Drop the table for the given model.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Cascading deletes are not handled by this method, nor is the removal
+of any constraints.</p>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="Model.table_exists">
+<em class="property">classmethod </em><tt class="descname">table_exists</tt><big>(</big><big>)</big><a class="headerlink" href="#Model.table_exists" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Boolean whether the table for this model exists in the database</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Model API (smells like django)</a><ul>
+<li><a class="reference internal" href="#creating-tables">Creating tables</a></li>
+<li><a class="reference internal" href="#model-instances">Model instances</a><ul>
+<li><a class="reference internal" href="#traversing-foriegn-keys">Traversing foriegn keys</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#model-options">Model options</a></li>
+<li><a class="reference internal" href="#model-methods">Model methods</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="example.html"
+                        title="previous chapter">Example app</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="fields.html"
+                        title="next chapter">Fields</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/peewee/models.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="fields.html" title="Fields"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="example.html" title="Example app"
+             >previous</a> |</li>
+        <li><a href="../index.html">peewee 0.9.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, charles leifer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

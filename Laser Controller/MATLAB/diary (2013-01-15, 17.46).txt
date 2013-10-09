@@ -1,0 +1,22 @@
+
+
+
+=== INTERACTIVE CAMERA TILT CALIBRATION ===
+Coordinates for W = [Wx, Wy]: [290,200]
+	Point: 1 of 4,	L: [179.81  72.49][%]	W: [290.00 200.00][px]
+Coordinates for W = [Wx, Wy]: [110, 210]
+	Point: 2 of 4,	L: [545.98  96.36][%]	W: [110.00 210.00][px]
+Coordinates for W = [Wx, Wy]: [120,350]
+	Point: 3 of 4,	L: [552.26 388.41][%]	W: [120.00 350.00][px]
+Coordinates for W = [Wx, Wy]: [300, 350]
+	Point: 4 of 4,	L: [118.89 378.36][%]	W: [300.00 350.00][px]
+=== TRAINING SET GENERATION ===
+	=> Starting connection with Arduino...
+{??? Error using ==> <a href="matlab: opentoline('C:\Program Files\MATLAB\R2010b\toolbox\matlab\iofun\@serial\fopen.m',72,0)">serial.fopen at 72</a>
+Port: COM6 is not available. Available ports: COM1, COM3, COM4, COM5.
+Use INSTRFIND to determine if other instrument objects are connected to the
+requested device.
+
+Error in ==> <a href="matlab: opentoline('X:\Alan Zucconi\Laser Controller\MATLAB\startMotors.m',11,0)">startMotors at 11</a>
+        fopen(s);
+} 
